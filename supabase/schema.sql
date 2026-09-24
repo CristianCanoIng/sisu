@@ -6,8 +6,8 @@ UPDATE public.consultas SET tipo_consulta = NULL WHERE tipo_consulta IS NOT NULL
 ALTER TABLE public.consultas DROP CONSTRAINT IF EXISTS consultas_tipo_consulta_check;
 ALTER TABLE public.consultas ADD CONSTRAINT consultas_tipo_consulta_check
 CHECK (tipo_consulta IS NULL OR tipo_consulta IN ('Enfermería','Medicina General'));
-UPDATE public.usuarios SET id_rol = NULL WHERE id_rol = 6;
-DELETE FROM public.roles WHERE id_rol = 6;
+UPDATE public.usuarios SET id_rol = NULL WHERE id_rol IS NOT NULL AND id_rol NOT IN (1,2,3,4,5,7);
+DELETE FROM public.roles WHERE id_rol NOT IN (1,2,3,4,5,7);
 CREATE UNIQUE INDEX IF NOT EXISTS inventario_codigo_unique ON public.inventario(codigo) WHERE codigo IS NOT NULL;
 CREATE INDEX IF NOT EXISTS usuarios_auth_user_idx ON public.usuarios(auth_user_id);
 -- Bucket privado para soportes de incapacidades
