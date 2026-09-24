@@ -1,1 +1,833 @@
-<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SISU - Acceso</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"><link rel="stylesheet" href="./assets/css/app.css"></head><body class="login-page"><div class="login-shell"><section class="login-hero"><div class="login-logos"><img src="./assets/img/logosisu.png" alt="SISU"><img src="./assets/img/logouni.png" alt="Universidad"></div><h1>SISU</h1><p>Sistema Integral de Salud Universitaria. Accede a información médica, incapacidades, bienestar, SST, acompañamiento e inventario según tu rol.</p></section><section class="login-card"><h2>Iniciar sesión</h2><p>Usa tus credenciales institucionales.</p><div id="configWarning" class="alert alert-error hidden">Configura primero Supabase en <strong>assets/js/supabase.js</strong>.</div><div id="loginError" class="alert alert-error hidden"></div><form id="loginForm"><div class="form-group"><label>Correo</label><input id="correo" class="form-control" type="email" required autocomplete="username"></div><div class="form-group"><label>Contraseña</label><input id="password" class="form-control" type="password" required autocomplete="current-password"></div><div class="form-group"><label>Rol</label><input id="rolId" type="hidden"><div class="role-grid"><button type="button" class="role-option" data-role="1">Administrador</button><button type="button" class="role-option" data-role="2">Coordinador</button><button type="button" class="role-option" data-role="3">Estudiante</button><button type="button" class="role-option" data-role="4">Enfermero</button><button type="button" class="role-option" data-role="5">Docente</button><button type="button" class="role-option" data-role="7">Bienestar</button></div></div><button class="btn btn-primary" style="width:100%;padding:13px" type="submit"><i class="fas fa-sign-in-alt"></i> Ingresar</button></form></section></div><script type="module">import{initLogin}from'./assets/js/auth.js';initLogin()</script></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISU - Acceso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --blue: #003698;
+            --blue-dark: #00276d;
+            --yellow: #FFCE00;
+            --black: #050505;
+            --panel: rgba(255, 255, 255, 0.9);
+            --line: rgba(0, 54, 152, 0.16);
+            --text: #0b1736;
+            --muted: #4b5d7a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }\n        .hidden { display: none !important; }
+
+        body {
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at 16% 18%, rgba(255, 206, 0, 0.36), transparent 30%),
+                radial-gradient(circle at 78% 72%, rgba(0, 54, 152, 0.2), transparent 32%),
+                linear-gradient(135deg, #f6f8fc 0%, #e8eefb 46%, #ffffff 100%);
+            color: var(--text);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 8% 88%, rgba(0, 54, 152, 0.34), transparent 34%),
+                radial-gradient(circle at 0% 100%, rgba(0, 0, 0, 0.18), transparent 28%);
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(120deg, transparent, rgba(255, 206, 0, 0.22), transparent);
+            transform: translateX(-100%);
+            animation: scanner 7s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        #aurora-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            mix-blend-mode: screen;
+            opacity: 0.92;
+        }
+
+        .login-shell {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(360px, 480px);
+            gap: clamp(22px, 4vw, 48px);
+            align-items: center;
+            padding: clamp(16px, 4vw, 56px);
+        }
+
+        .logo-bar {
+            position: fixed;
+            z-index: 10;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 206, 0, 0.55);
+        }
+
+        .logo-bar img {
+            display: block;
+            width: auto;
+            height: 112px;
+            object-fit: contain;
+        }
+
+        .logo-bar .sisu-logo { height: 104px; }
+
+        .hero-panel {
+            position: relative;
+            min-height: 620px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .brand h1 { font-size: 38px; font-weight: 900; letter-spacing: 0; }
+        .brand p { margin-top: 4px; color: var(--muted); font-size: 13px; }
+
+        .hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            padding: 9px 13px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--blue);
+            background: rgba(255, 206, 0, 0.22);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        .hero-title {
+            max-width: 780px;
+            font-size: clamp(40px, 5vw, 58px);
+            line-height: 1.02;
+            font-weight: 900;
+            margin-bottom: 22px;
+        }
+
+        .hero-title span { color: var(--blue); text-shadow: 0 0 22px rgba(255, 206, 0, 0.34); }
+        .hero-copy { max-width: 620px; color: #334766; line-height: 1.7; font-size: 16px; }
+
+        .signal-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            max-width: 680px;
+            margin-top: 38px;
+        }
+
+        .signal-card {
+            padding: 16px;
+            border: 1px solid rgba(255, 206, 0, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(12px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .signal-card i { color: var(--yellow); margin-bottom: 10px; }
+        .signal-card strong { display: block; font-size: 13px; margin-bottom: 4px; }
+        .signal-card span { display: block; color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+        .bot-stage {
+            position: fixed;
+            z-index: 4;
+            left: var(--bot-left, 15vw);
+            top: var(--bot-top, 70vh);
+            width: 156px;
+            height: 172px;
+            transform: translate(-50%, -50%) rotate(var(--bot-rotate, 0deg));
+            transition: left 0.42s ease-out, top 0.42s ease-out, transform 0.3s ease-out;
+            filter: drop-shadow(0 22px 28px rgba(0, 54, 152, 0.22));
+            pointer-events: none;
+        }
+
+        .bot-shadow {
+            position: absolute;
+            left: 22px;
+            right: 22px;
+            bottom: 0;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(0, 54, 152, 0.2);
+            filter: blur(8px);
+            animation: shadowPulse 2.8s ease-in-out infinite;
+        }
+
+        .bot {
+            position: absolute;
+            left: 22px;
+            bottom: 22px;
+            width: 112px;
+            height: 118px;
+            border-radius: 50% 50% 26px 26px;
+            border: 3px solid var(--blue);
+            background: linear-gradient(160deg, #ffffff 0%, #eef3ff 58%, #dce6ff 100%);
+            animation: floatBot 3s ease-in-out infinite;
+            overflow: visible;
+        }
+
+        .bot::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: -30px;
+            width: 3px;
+            height: 26px;
+            background: var(--blue);
+            transform: translateX(-50%);
+            box-shadow: 0 0 12px rgba(0, 54, 152, 0.4);
+        }
+
+        .antenna {
+            position: absolute;
+            left: 50%;
+            top: -42px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--yellow);
+            transform: translateX(-50%);
+            box-shadow: 0 0 22px rgba(245, 196, 0, 0.85);
+        }
+
+        .face {
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            top: 22px;
+            height: 50px;
+            border-radius: 18px;
+            background: var(--blue);
+            border: 1px solid rgba(255, 206, 0, 0.48);
+            overflow: hidden;
+        }
+
+        .eye {
+            position: absolute;
+            top: 18px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--yellow);
+            box-shadow: 0 0 12px rgba(255, 206, 0, 0.95);
+            transform: translate(var(--eye-x, 0px), var(--eye-y, 0px));
+            transition: transform 0.1s ease-out;
+        }
+
+        .eye.left { left: 22px; }
+        .eye.right { right: 22px; }
+
+        .bot-smile {
+            position: absolute;
+            left: 40px;
+            top: 35px;
+            width: 24px;
+            height: 10px;
+            border-bottom: 2px solid var(--yellow);
+            border-radius: 0 0 18px 18px;
+            opacity: 0.86;
+        }
+
+        .bot-ear {
+            position: absolute;
+            top: 42px;
+            width: 18px;
+            height: 34px;
+            border-radius: 999px;
+            background: var(--yellow);
+            border: 2px solid var(--blue);
+        }
+
+        .bot-ear.left { left: -11px; }
+        .bot-ear.right { right: -11px; }
+
+        .bot-arm {
+            position: absolute;
+            bottom: 30px;
+            width: 16px;
+            height: 54px;
+            border-radius: 999px;
+            background: var(--blue);
+            transform-origin: top center;
+        }
+
+        .bot-arm.left { left: -18px; transform: rotate(18deg); }
+        .bot-arm.right { right: -18px; transform: rotate(-18deg); }
+
+        .bot-body-light {
+            position: absolute;
+            left: 50%;
+            bottom: 22px;
+            width: 42px;
+            height: 12px;
+            border-radius: 999px;
+            background: var(--yellow);
+            transform: translateX(-50%);
+            animation: lightPulse 1.8s ease-in-out infinite;
+        }
+
+        .login-card {
+            position: relative;
+            width: 100%;
+            border: 1px solid rgba(255, 206, 0, 0.28);
+            border-radius: 12px;
+            padding: 34px;
+            background: var(--panel);
+            backdrop-filter: blur(22px);
+            box-shadow: 0 28px 70px rgba(0, 54, 152, 0.16), inset 0 1px 0 rgba(255,255,255,0.7);
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(255,206,0,0.74), rgba(0,54,152,0.58), transparent);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .form-header { margin-bottom: 26px; }
+        .form-header h2 { font-size: 28px; font-weight: 900; margin-bottom: 8px; }
+        .form-header p { color: var(--muted); font-size: 14px; }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--blue);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .input-group { position: relative; }
+        .input-group i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--yellow);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px 16px 15px 46px;
+            border: 1px solid rgba(0, 54, 152, 0.18);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.88);
+            color: var(--text);
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+        }
+
+        .form-control::placeholder { color: #657997; }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--yellow);
+            box-shadow: 0 0 0 4px rgba(255,206,0,0.12), 0 0 28px rgba(255,206,0,0.12);
+            transform: translateY(-1px);
+        }
+
+        .rol-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .rol-btn {
+            padding: 12px;
+            border: 1px solid rgba(0, 54, 152, 0.16);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.82);
+            color: var(--muted);
+            cursor: pointer;
+            transition: transform 0.22s, border-color 0.22s, background 0.22s, color 0.22s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rol-btn i { width: 22px; color: var(--yellow); }
+        .rol-btn span { font-size: 12px; font-weight: 800; }
+        .rol-btn:hover { transform: translateY(-2px); border-color: var(--yellow); color: var(--text); }
+        .rol-btn.selected, .rol-btn.active {
+            border-color: var(--yellow);
+            background: rgba(255, 206, 0, 0.12);
+            color: var(--text);
+            box-shadow: 0 0 24px rgba(255, 206, 0, 0.12);
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 10px;
+            padding: 13px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 206, 0, 0.16);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.76);
+        }
+
+        .checkbox-group input { width: 18px; height: 18px; accent-color: var(--yellow); flex: 0 0 auto; }
+        .checkbox-group label { color: #4b5d7a; font-size: 12px; line-height: 1.45; cursor: pointer; }
+        .legal-link { color: var(--yellow); font-weight: 800; }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            border: 0;
+            border-radius: 8px;
+            color: #000000;
+            background: linear-gradient(90deg, var(--yellow), #ffd938);
+            font-size: 15px;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.24s, box-shadow 0.24s;
+            box-shadow: 0 14px 36px rgba(255,206,0,0.22);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 46px rgba(255,206,0,0.32);
+        }
+
+        .error-message {
+            padding: 13px;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            color: #991b1b;
+            background: rgba(254, 226, 226, 0.92);
+            border: 1px solid rgba(248, 113, 113, 0.28);
+            font-size: 13px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .login-footer {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255, 206, 0, 0.16);
+            color: #4b5d7a;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        @keyframes scanner {
+            0%, 18% { transform: translateX(-120%); }
+            55%, 100% { transform: translateX(120%); }
+        }
+
+        @keyframes floatBot {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+
+        @keyframes shadowPulse {
+            0%, 100% { transform: scaleX(0.86); opacity: 0.42; }
+            50% { transform: scaleX(1.1); opacity: 0.24; }
+        }
+
+        @keyframes lightPulse {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 1; }
+        }
+
+        @media (max-width: 1060px) {
+            body { overflow: auto; }
+            .login-shell { grid-template-columns: 1fr; padding: 160px 34px 34px; }
+            .hero-panel { min-height: auto; }
+            .hero-title { font-size: 42px; }
+        }
+
+        @media (max-width: 560px) {
+            body { overflow-x: hidden; }
+            .logo-bar {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                justify-content: center;
+                padding: 9px 10px;
+                gap: 10px;
+            }
+            .logo-bar img { height: 68px; max-width: 46%; }
+            .logo-bar .sisu-logo { height: 62px; }
+            .login-shell { display: block; padding: 114px 14px 14px; min-height: auto; }
+            .hero-panel { align-items: center; min-height: auto; text-align: center; padding: 10px 0 18px; }
+            .brand { justify-content: center; gap: 10px; margin-bottom: 18px; }
+            .brand h1 { font-size: 28px; }
+            .brand p { font-size: 11px; }
+            .hero-kicker { font-size: 10px; margin-bottom: 12px; }
+            .hero-title { font-size: 30px; max-width: 100%; margin-bottom: 12px; }
+            .hero-copy { font-size: 13px; line-height: 1.55; }
+            .signal-strip { grid-template-columns: 1fr; margin-top: 16px; gap: 8px; width: 100%; }
+            .signal-card { padding: 10px; text-align: left; }
+            .signal-card i { margin-bottom: 4px; }
+            .bot-stage {
+                position: relative;
+                left: auto;
+                top: auto;
+                z-index: 1;
+                width: 88px;
+                height: 102px;
+                margin: 14px auto 0;
+                transform: none;
+                filter: drop-shadow(0 14px 18px rgba(0, 54, 152, 0.18));
+            }
+            .bot-stage .bot-shadow { left: 16px; right: 16px; height: 12px; }
+            .bot { left: 8px; width: 72px; height: 82px; border-radius: 50% 50% 18px 18px; }
+            .bot::before { top: -25px; height: 22px; }
+            .antenna { top: -35px; width: 14px; height: 14px; }
+            .face { left: 9px; right: 9px; top: 14px; height: 34px; border-radius: 12px; }
+            .eye { top: 12px; width: 9px; height: 9px; }
+            .eye.left { left: 14px; }
+            .eye.right { right: 14px; }
+            .bot-smile { left: 25px; top: 24px; width: 20px; height: 8px; }
+            .bot-body-light { width: 30px; bottom: 14px; }
+            .bot-ear { top: 30px; width: 13px; height: 25px; }
+            .bot-ear.left { left: -8px; }
+            .bot-ear.right { right: -8px; }
+            .bot-arm { width: 11px; height: 36px; bottom: 22px; }
+            .bot-arm.left { left: -12px; }
+            .bot-arm.right { right: -12px; }
+            .rol-buttons { grid-template-columns: 1fr; }
+            .login-card { position: relative; z-index: 5; padding: 18px; border-radius: 10px; }
+            .form-header { margin-bottom: 18px; }
+            .form-header h2 { font-size: 24px; }
+            .form-header p { font-size: 12px; }
+            .form-control { padding: 13px 14px 13px 42px; font-size: 14px; }
+            .rol-btn { min-height: 44px; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="aurora-canvas" aria-hidden="true"></canvas>
+
+    <div class="logo-bar">
+        <img src="./assets/img/logouni.png" alt="Logo UNIMINUTO">
+        <img class="sisu-logo" src="./assets/img/logosisu.png" alt="Logo SISU">
+    </div>
+
+    <main class="login-shell">
+        <section class="hero-panel">
+            <div class="brand">
+                <div>
+                    <h1>SISU</h1>
+                    <p>Sistema Integral de Salud Universitaria</p>
+                </div>
+            </div>
+
+            <div class="hero-kicker"><i class="fas fa-shield-halved"></i> Bienestar universitario conectado</div>
+            <h2 class="hero-title">Sistema Integral de Gestión de <span>Bienestar y Salud Universitaria</span>.</h2>
+            <p class="hero-copy">Accede a consultas, incapacidades, bienestar, SST y reportes desde una experiencia segura, clara y preparada para cada rol institucional.</p>
+
+            <div class="signal-strip">
+                <div class="signal-card"><i class="fas fa-shield-halved"></i><strong>Acceso por rol</strong><span>Solo veras los modulos asignados a tu perfil.</span></div>
+                <div class="signal-card"><i class="fas fa-wave-square"></i><strong>Seguimiento vivo</strong><span>Indicadores y estados visibles al iniciar sesion.</span></div>
+                <div class="signal-card"><i class="fas fa-file-medical"></i><strong>Soporte digital</strong><span>Historial, soportes y registros en un solo sistema.</span></div>
+            </div>
+
+            <div class="bot-stage" id="botStage" aria-hidden="true">
+                <div class="bot-shadow"></div>
+                <div class="bot">
+                    <div class="antenna"></div>
+                    <div class="bot-ear left"></div>
+                    <div class="bot-ear right"></div>
+                    <div class="bot-arm left"></div>
+                    <div class="bot-arm right"></div>
+                    <div class="face">
+                        <span class="eye left"></span>
+                        <span class="eye right"></span>
+                        <span class="bot-smile"></span>
+                    </div>
+                    <div class="bot-body-light"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="login-card">
+            <div class="form-header">
+                <h2>Acceso SISU</h2>
+                <p>Ingresa tus credenciales institucionales. Ningún usuario queda seleccionado por defecto.</p>
+            </div>
+
+            <div id="configWarning" class="error-message hidden"><i class="fas fa-triangle-exclamation"></i><span>Supabase no está configurado.</span></div>
+            <div id="loginError" class="error-message hidden"></div>
+
+            <form id="loginForm" autocomplete="off">
+<div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Correo institucional</label>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input id="correo" type="email" name="correo" class="form-control" placeholder="nombre.apellido@uniminuto.edu.co" autocomplete="username" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Contraseña</label>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input id="password" type="password" name="password" class="form-control" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-user-tag"></i> Selecciona tu rol</label>
+                    <div class="rol-buttons" id="rolButtons">
+                        <button type="button" class="rol-btn role-option" data-role="1"><i class="fas fa-crown"></i><span>Administrador</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="2"><i class="fas fa-clipboard-list"></i><span>Coordinador</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="3"><i class="fas fa-user-graduate"></i><span>Estudiante</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="4"><i class="fas fa-stethoscope"></i><span>Enfermero</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="5"><i class="fas fa-chalkboard-user"></i><span>Docente</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="7"><i class="fas fa-heart-pulse"></i><span>Bienestar</span></button>
+                    </div>
+                    <input type="hidden" id="rolId" value="">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="terms-check" required>
+                    <label for="terms-check">Acepto los <span class="legal-link">Términos y Condiciones</span> y la <span class="legal-link">Política de Privacidad</span> de SISU.</label>
+                </div>
+
+                <button type="submit" class="btn-login"><i class="fas fa-arrow-right-to-bracket"></i> Entrar al sistema</button>
+            </form>
+
+            <div class="login-footer">
+                SISU v2.0 - Acceso seguro por roles
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            const canvas = document.getElementById('aurora-canvas');
+            const ctx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            let t = 0;
+
+            function noise(x, y, time, scale) {
+                return Math.sin(x * 0.9 * scale + time * 0.65)
+                     * Math.cos(y * 1.3 * scale + time * 0.48)
+                     + Math.sin(x * 1.6 * scale - time * 0.28)
+                     * Math.sin(y * 0.55 * scale + time * 0.88) * 0.5
+                     + Math.cos(x * 0.38 * scale + time * 1.1) * 0.3;
+            }
+
+            const BANDS = [
+                { baseY: 0.34, amplitude: 0.10, speed: 0.24, colorA: [255, 206, 0], colorB: [255, 180, 20], thickness: 0.13, opacity: 0.80, phase: 0.0, warpFreq: 1.0, noiseScale: 1.0 },
+                { baseY: 0.26, amplitude: 0.09, speed: 0.17, colorA: [0, 54, 152], colorB: [10, 80, 200], thickness: 0.11, opacity: 0.70, phase: 2.2, warpFreq: 1.2, noiseScale: 0.85 },
+                { baseY: 0.18, amplitude: 0.07, speed: 0.30, colorA: [255, 220, 40], colorB: [200, 160, 0], thickness: 0.09, opacity: 0.50, phase: 4.5, warpFreq: 0.85, noiseScale: 1.15 },
+                { baseY: 0.42, amplitude: 0.07, speed: 0.20, colorA: [30, 100, 220], colorB: [180, 200, 255], thickness: 0.08, opacity: 0.42, phase: 1.6, warpFreq: 1.4, noiseScale: 0.75 },
+                { baseY: 0.30, amplitude: 0.06, speed: 0.13, colorA: [255, 255, 255], colorB: [255, 230, 100], thickness: 0.06, opacity: 0.28, phase: 3.8, warpFreq: 0.7, noiseScale: 1.3 },
+                { baseY: 0.48, amplitude: 0.05, speed: 0.10, colorA: [0, 30, 100], colorB: [0, 54, 152], thickness: 0.10, opacity: 0.35, phase: 5.1, warpFreq: 0.6, noiseScale: 0.9 },
+            ];
+
+            function drawBand(band, time) {
+                const W = canvas.width, H = canvas.height;
+                const segs = 260;
+                const dx = W / segs;
+
+                for (let i = 0; i < segs; i++) {
+                    const x = i * dx;
+                    const xn = x / W;
+
+                    const w1 = noise(xn * 3.0 * band.warpFreq, 0, time * band.speed + band.phase, band.noiseScale);
+                    const w2 = noise(xn * 2.2 * band.warpFreq, 1, time * band.speed * 0.65 + band.phase + 1.0, band.noiseScale);
+
+                    const cy = (band.baseY + w1 * band.amplitude + w2 * band.amplitude * 0.38) * H;
+                    const thick = band.thickness * H;
+
+                    const localOp = (0.38 + 0.62 * Math.max(0, w1 * 0.5 + 0.5)) * band.opacity;
+                    const shimmer = 0.68 + 0.32 * Math.sin(xn * 22 + time * 2.4 + band.phase);
+
+                    const mix = 0.5 + 0.5 * Math.sin(xn * 4.8 + time * band.speed * 0.5 + band.phase);
+                    const r = Math.round(band.colorA[0] * mix + band.colorB[0] * (1 - mix));
+                    const g = Math.round(band.colorA[1] * mix + band.colorB[1] * (1 - mix));
+                    const b = Math.round(band.colorA[2] * mix + band.colorB[2] * (1 - mix));
+
+                    const grad = ctx.createLinearGradient(0, cy - thick * 0.55, 0, cy + thick);
+                    const a = localOp * shimmer;
+                    grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+                    grad.addColorStop(0.14, `rgba(${r},${g},${b},${(a * 0.55).toFixed(3)})`);
+                    grad.addColorStop(0.40, `rgba(${r},${g},${b},${a.toFixed(3)})`);
+                    grad.addColorStop(0.62, `rgba(${r},${g},${b},${(a * 0.82).toFixed(3)})`);
+                    grad.addColorStop(0.84, `rgba(${r},${g},${b},${(a * 0.28).toFixed(3)})`);
+                    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(x, cy - thick * 0.55, dx + 1, thick * 1.55);
+                }
+            }
+
+            function drawRays(time) {
+                const W = canvas.width, H = canvas.height;
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+
+                const NUM = 22;
+                for (let i = 0; i < NUM; i++) {
+                    const xBase = (i / NUM + 0.5 / NUM) * W;
+                    const sway = Math.sin(time * 0.38 + i * 1.85) * 0.022 * W;
+                    const x = xBase + sway;
+
+                    const topY = (0.06 + 0.07 * Math.sin(time * 0.28 + i * 2.4)) * H;
+                    const botY = (0.50 + 0.07 * Math.cos(time * 0.22 + i * 1.95)) * H;
+                    const bri = 0.055 + 0.065 * Math.sin(time * 1.9 + i * 3.2);
+                    const w = 7 + 5 * Math.sin(i * 2.2 + time * 0.55);
+
+                    let r, g, b;
+                    const phase = (i % 3);
+                    if (phase === 0) { r = 255; g = 206; b = 0; }
+                    else if (phase === 1) { r = 0; g = 54; b = 152; }
+                    else { r = 200; g = 220; b = 255; }
+
+                    const grad = ctx.createLinearGradient(x, topY, x, botY);
+                    grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+                    grad.addColorStop(0.18, `rgba(${r},${g},${b},${bri.toFixed(3)})`);
+                    grad.addColorStop(0.50, `rgba(${r},${g},${b},${(bri * 0.65).toFixed(3)})`);
+                    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+
+                    ctx.beginPath();
+                    ctx.moveTo(x - w / 2, topY);
+                    ctx.lineTo(x + w / 2, topY);
+                    ctx.lineTo(x + w * 0.28, botY);
+                    ctx.lineTo(x - w * 0.28, botY);
+                    ctx.closePath();
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            function drawGlows(time) {
+                const W = canvas.width, H = canvas.height;
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+
+                const GLOWS = [
+                    { cx: 0.25, cy: 0.28, rx: 0.36, ry: 0.11, r: 255, g: 206, b: 0, op: 0.10, sp: 0.16, ph: 0.0 },
+                    { cx: 0.68, cy: 0.22, rx: 0.28, ry: 0.09, r: 0, g: 54, b: 152, op: 0.09, sp: 0.21, ph: 1.5 },
+                    { cx: 0.50, cy: 0.38, rx: 0.42, ry: 0.07, r: 255, g: 220, b: 80, op: 0.06, sp: 0.12, ph: 2.9 },
+                    { cx: 0.80, cy: 0.30, rx: 0.22, ry: 0.08, r: 100, g: 160, b: 255, op: 0.07, sp: 0.18, ph: 4.1 },
+                ];
+
+                for (const gl of GLOWS) {
+                    const px = (gl.cx + 0.035 * Math.sin(time * gl.sp + gl.ph)) * W;
+                    const py = (gl.cy + 0.018 * Math.cos(time * gl.sp * 0.7 + gl.ph)) * H;
+                    const pulse = 1 + 0.11 * Math.sin(time * gl.sp * 1.6 + gl.ph);
+                    const op = gl.op * (0.82 + 0.18 * Math.sin(time * gl.sp * 2.1 + gl.ph));
+
+                    const grad = ctx.createRadialGradient(px, py, 0, px, py, gl.rx * W * pulse);
+                    grad.addColorStop(0, `rgba(${gl.r},${gl.g},${gl.b},${op.toFixed(3)})`);
+                    grad.addColorStop(0.42, `rgba(${gl.r},${gl.g},${gl.b},${(op * 0.32).toFixed(3)})`);
+                    grad.addColorStop(1, `rgba(${gl.r},${gl.g},${gl.b},0)`);
+
+                    ctx.beginPath();
+                    ctx.ellipse(px, py, gl.rx * W * pulse, gl.ry * H * pulse, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            function frame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+
+                drawGlows(t);
+                for (const band of BANDS) drawBand(band, t);
+                drawRays(t);
+
+                ctx.restore();
+                t += 0.011;
+                requestAnimationFrame(frame);
+            }
+
+            frame();
+        })();
+        const botStage = document.getElementById('botStage');
+        const loginCard = document.querySelector('.login-card');
+
+
+
+        window.addEventListener('mousemove', function (event) {
+            const cardRect = loginCard.getBoundingClientRect();
+            const desktopLimit = cardRect.left > 0 ? cardRect.left - 96 : window.innerWidth - 78;
+            const maxLeft = window.innerWidth <= 1060 ? window.innerWidth - 78 : Math.max(78, desktopLimit);
+            const targetLeft = event.clientX + 34;
+            const targetTop = event.clientY + 38;
+            const left = Math.min(Math.max(targetLeft, 78), maxLeft);
+            const top = Math.min(Math.max(targetTop, 92), window.innerHeight - 78);
+            const rotate = (event.clientX / window.innerWidth - 0.5) * 12;
+            const eyeX = (event.clientX / window.innerWidth - 0.5) * 8;
+            const eyeY = (event.clientY / window.innerHeight - 0.5) * 6;
+
+            botStage.style.setProperty('--bot-left', left.toFixed(1) + 'px');
+            botStage.style.setProperty('--bot-top', top.toFixed(1) + 'px');
+            botStage.style.setProperty('--bot-rotate', rotate.toFixed(1) + 'deg');
+            botStage.style.setProperty('--eye-x', eyeX.toFixed(1) + 'px');
+            botStage.style.setProperty('--eye-y', eyeY.toFixed(1) + 'px');
+        });
+    </script>
+    <script type="module">
+        import { initLogin } from './assets/js/auth.js';
+        initLogin();
+    </script>
+</body>
+</html>
