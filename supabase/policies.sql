@@ -80,3 +80,41 @@ CREATE POLICY seg_insert ON public.seguimientos_acompanamiento FOR INSERT TO aut
 
 CREATE POLICY incap_storage_insert ON storage.objects FOR INSERT TO authenticated WITH CHECK(bucket_id='incapacidades' AND (storage.foldername(name))[1]=public.mi_usuario_id()::text);
 CREATE POLICY incap_storage_read ON storage.objects FOR SELECT TO authenticated USING(bucket_id='incapacidades' AND (public.mi_rol() IN (1,2,4,5) OR (storage.foldername(name))[1]=public.mi_usuario_id()::text));
+
+
+-- Seguridad del módulo de implementos deportivos
+ALTER TABLE public.implementos_deportivos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.prestamos_implementos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS implementos_deportivos_read ON public.implementos_deportivos;
+DROP POLICY IF EXISTS implementos_deportivos_insert ON public.implementos_deportivos;
+DROP POLICY IF EXISTS implementos_deportivos_update ON public.implementos_deportivos;
+DROP POLICY IF EXISTS implementos_deportivos_delete ON public.implementos_deportivos;
+DROP POLICY IF EXISTS prestamos_implementos_read ON public.prestamos_implementos;
+
+CREATE POLICY implementos_deportivos_read
+ON public.implementos_deportivos FOR SELECT TO authenticated
+USING (public.mi_rol() IN (1,7));
+
+CREATE POLICY implementos_deportivos_insert
+ON public.implementos_deportivos FOR INSERT TO authenticated
+WITH CHECK (public.mi_rol() IN (1,7));
+
+CREATE POLICY implementos_deportivos_update
+ON public.implementos_deportivos FOR UPDATE TO authenticated
+USING (public.mi_rol() IN (1,7))
+WITH CHECK (public.mi_rol() IN (1,7));
+
+CREATE POLICY implementos_deportivos_delete
+ON public.implementos_deportivos FOR DELETE TO authenticated
+USING (public.mi_rol()=1);
+
+CREATE POLICY prestamos_implementos_read
+ON public.prestamos_implementos FOR SELECT TO authenticated
+USING (public.mi_rol() IN (1,7));
+
+REVOKE ALL ON TABLE public.implementos_deportivos FROM anon,authenticated;
+REVOKE ALL ON TABLE public.prestamos_implementos FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON TABLE public.implementos_deportivos TO authenticated;
+GRANT SELECT ON TABLE public.prestamos_implementos TO authenticated;
+GRANT USAGE,SELECT ON SEQUENCE public.implementos_deportivos_id_implemento_seq TO authenticated;

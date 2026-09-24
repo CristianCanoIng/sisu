@@ -34,3 +34,91 @@ BEGIN
  GET DIAGNOSTICS borradas=ROW_COUNT;
  IF borradas>0 THEN UPDATE actividades_bienestar SET cupos_disponibles=LEAST(cupo_maximo,COALESCE(cupos_disponibles,0)+1) WHERE id_actividad=p_actividad; END IF;
 END $$;
+
+
+CREATE OR REPLACE FUNCTION public.registrar_prestamo_implemento(
+ p_id_implemento bigint,
+ p_id_estudiante bigint,
+ p_cantidad integer DEFAULT 1,
+ p_observaciones text DEFAULT NULL
+) RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE
+ uid bigint;
+ rol bigint;
+ disponible integer;
+ estado_item text;
+ rol_estudiante bigint;
+ prestamo_id bigint;
+BEGIN
+ uid:=public.mi_usuario_id();
+ rol:=public.mi_rol();
+ IF uid IS NULL OR rol NOT IN (1,7) THEN RAISE EXCEPTION 'Sin permiso para registrar préstamos'; END IF;
+ IF p_cantidad IS NULL OR p_cantidad<=0 THEN RAISE EXCEPTION 'Cantidad inválida'; END IF;
+
+ SELECT cantidad_disponible,estado INTO disponible,estado_item
+ FROM public.implementos_deportivos
+ WHERE id_implemento=p_id_implemento
+ FOR UPDATE;
+
+ IF disponible IS NULL THEN RAISE EXCEPTION 'Implemento no encontrado'; END IF;
+ IF estado_item<>'Activo' THEN RAISE EXCEPTION 'El implemento no está habilitado para préstamo'; END IF;
+ IF disponible<p_cantidad THEN RAISE EXCEPTION 'No hay suficientes unidades disponibles'; END IF;
+
+ SELECT id_rol INTO rol_estudiante
+ FROM public.usuarios
+ WHERE id_usuario=p_id_estudiante AND estado='Activo';
+
+ IF rol_estudiante IS DISTINCT FROM 3 THEN RAISE EXCEPTION 'El usuario seleccionado no es un estudiante activo'; END IF;
+
+ UPDATE public.implementos_deportivos
+ SET cantidad_disponible=cantidad_disponible-p_cantidad
+ WHERE id_implemento=p_id_implemento;
+
+ INSERT INTO public.prestamos_implementos(
+  id_implemento,id_estudiante,cantidad,prestado_por,observaciones_salida,estado
+ ) VALUES(
+  p_id_implemento,p_id_estudiante,p_cantidad,uid,NULLIF(TRIM(p_observaciones),''),'Prestado'
+ ) RETURNING id_prestamo INTO prestamo_id;
+
+ RETURN prestamo_id;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.registrar_devolucion_implemento(
+ p_id_prestamo bigint,
+ p_observaciones text DEFAULT NULL
+) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE
+ uid bigint;
+ rol bigint;
+ item_id bigint;
+ qty integer;
+BEGIN
+ uid:=public.mi_usuario_id();
+ rol:=public.mi_rol();
+ IF uid IS NULL OR rol NOT IN (1,7) THEN RAISE EXCEPTION 'Sin permiso para registrar devoluciones'; END IF;
+
+ SELECT id_implemento,cantidad INTO item_id,qty
+ FROM public.prestamos_implementos
+ WHERE id_prestamo=p_id_prestamo AND estado='Prestado'
+ FOR UPDATE;
+
+ IF item_id IS NULL THEN RAISE EXCEPTION 'Préstamo activo no encontrado'; END IF;
+
+ UPDATE public.prestamos_implementos
+ SET estado='Devuelto',
+     fecha_devolucion=NOW(),
+     recibido_por=uid,
+     observaciones_entrega=NULLIF(TRIM(p_observaciones),'')
+ WHERE id_prestamo=p_id_prestamo;
+
+ UPDATE public.implementos_deportivos
+ SET cantidad_disponible=LEAST(cantidad_total,cantidad_disponible+qty)
+ WHERE id_implemento=item_id;
+END $$;
+
+REVOKE ALL ON FUNCTION public.registrar_prestamo_implemento(bigint,bigint,integer,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.registrar_devolucion_implemento(bigint,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.registrar_prestamo_implemento(bigint,bigint,integer,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.registrar_devolucion_implemento(bigint,text) TO authenticated;
