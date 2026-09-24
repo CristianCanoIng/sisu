@@ -4,6 +4,37 @@ DO $$ DECLARE t text; BEGIN
  LOOP EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t); END LOOP;
 END $$;
 
+DROP POLICY IF EXISTS roles_read ON public.roles;
+DROP POLICY IF EXISTS usuarios_self_read ON public.usuarios;
+DROP POLICY IF EXISTS usuarios_admin_update ON public.usuarios;
+DROP POLICY IF EXISTS pacientes_read ON public.pacientes;
+DROP POLICY IF EXISTS pacientes_admin_write ON public.pacientes;
+DROP POLICY IF EXISTS consultas_read ON public.consultas;
+DROP POLICY IF EXISTS consultas_insert ON public.consultas;
+DROP POLICY IF EXISTS consultas_update ON public.consultas;
+DROP POLICY IF EXISTS consultas_delete ON public.consultas;
+DROP POLICY IF EXISTS incapacidades_read ON public.incapacidades;
+DROP POLICY IF EXISTS incapacidades_student_insert ON public.incapacidades;
+DROP POLICY IF EXISTS incapacidades_manage ON public.incapacidades;
+DROP POLICY IF EXISTS incapacidades_delete ON public.incapacidades;
+DROP POLICY IF EXISTS bienestar_read ON public.actividades_bienestar;
+DROP POLICY IF EXISTS bienestar_manage ON public.actividades_bienestar;
+DROP POLICY IF EXISTS inscripciones_read ON public.inscripciones_bienestar;
+DROP POLICY IF EXISTS sst_read ON public.eventos_sst;
+DROP POLICY IF EXISTS sst_manage ON public.eventos_sst;
+DROP POLICY IF EXISTS asistencia_read ON public.asistencia_sst;
+DROP POLICY IF EXISTS asistencia_insert ON public.asistencia_sst;
+DROP POLICY IF EXISTS inventario_read ON public.inventario;
+DROP POLICY IF EXISTS inventario_write ON public.inventario;
+DROP POLICY IF EXISTS movimientos_read ON public.movimiento_inventario;
+DROP POLICY IF EXISTS acomp_read ON public.acompanamientos;
+DROP POLICY IF EXISTS acomp_insert ON public.acompanamientos;
+DROP POLICY IF EXISTS acomp_update ON public.acompanamientos;
+DROP POLICY IF EXISTS seg_read ON public.seguimientos_acompanamiento;
+DROP POLICY IF EXISTS seg_insert ON public.seguimientos_acompanamiento;
+DROP POLICY IF EXISTS incap_storage_insert ON storage.objects;
+DROP POLICY IF EXISTS incap_storage_read ON storage.objects;
+
 CREATE POLICY roles_read ON public.roles FOR SELECT TO authenticated USING(true);
 CREATE POLICY usuarios_self_read ON public.usuarios FOR SELECT TO authenticated USING(auth_user_id=auth.uid() OR public.mi_rol() IN (1,2,4,7));
 CREATE POLICY usuarios_admin_update ON public.usuarios FOR UPDATE TO authenticated USING(public.mi_rol() IN (1,2)) WITH CHECK(public.mi_rol() IN (1,2));
