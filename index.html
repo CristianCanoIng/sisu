@@ -1,48 +1,3 @@
-<?php
-require_once 'conexion.php';
-
-// Si ya está logueado, ir al dashboard
-if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']) {
-    header('Location: dashboard.php');
-    exit;
-}
-
-$error_login = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
-    $correo = filter_var($_POST['correo'] ?? '', FILTER_SANITIZE_EMAIL);
-    $password = $_POST['password'] ?? '';
-    $rol_id = (int)($_POST['rol_id'] ?? 0);
-
-    if (empty($correo) || empty($password) || empty($rol_id)) {
-        $error_login = 'Todos los campos son obligatorios.';
-    } else {
-        $stmt = $pdo->prepare("
-            SELECT u.*, r.nombre as rol_nombre
-            FROM usuarios u
-            JOIN roles r ON u.id_rol = r.id_rol
-            WHERE u.correo = ? AND u.id_rol = ? AND u.estado = 'Activo'
-        ");
-        $stmt->execute([$correo, $rol_id]);
-        $usuario = $stmt->fetch();
-
-        if ($usuario && password_verify($password, $usuario['password'])) {
-            $_SESSION['usuario_id'] = $usuario['id_usuario'];
-            $_SESSION['usuario_nombre'] = $usuario['nombre'];
-            $_SESSION['usuario_rol'] = $usuario['rol_nombre'];
-            $_SESSION['usuario_rol_id'] = $usuario['id_rol'];
-            $_SESSION['logged_in'] = true;
-
-            header('Location: dashboard.php');
-            exit;
-        }
-
-        $error_login = 'Credenciales incorrectas o usuario inactivo.';
-    }
-}
-
-$roles = $pdo->query("SELECT * FROM roles ORDER BY id_rol")->fetchAll();
-?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -64,6 +19,7 @@ $roles = $pdo->query("SELECT * FROM roles ORDER BY id_rol")->fetchAll();
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        .hidden { display: none !important; }
 
         body {
             min-height: 100vh;
@@ -439,7 +395,7 @@ $roles = $pdo->query("SELECT * FROM roles ORDER BY id_rol")->fetchAll();
         .rol-btn i { width: 22px; color: var(--yellow); }
         .rol-btn span { font-size: 12px; font-weight: 800; }
         .rol-btn:hover { transform: translateY(-2px); border-color: var(--yellow); color: var(--text); }
-        .rol-btn.selected {
+        .rol-btn.selected, .rol-btn.active {
             border-color: var(--yellow);
             background: rgba(255, 206, 0, 0.12);
             color: var(--text);
@@ -597,8 +553,8 @@ $roles = $pdo->query("SELECT * FROM roles ORDER BY id_rol")->fetchAll();
     <canvas id="aurora-canvas" aria-hidden="true"></canvas>
 
     <div class="logo-bar">
-        <img src="docs/logouni.png" alt="Logo UNIMINUTO">
-        <img class="sisu-logo" src="docs/logosisu.png" alt="Logo SISU">
+        <img src="./assets/img/logouni.png" alt="Logo UNIMINUTO">
+        <img class="sisu-logo" src="./assets/img/logosisu.png" alt="Logo SISU">
     </div>
 
     <main class="login-shell">
@@ -644,18 +600,15 @@ $roles = $pdo->query("SELECT * FROM roles ORDER BY id_rol")->fetchAll();
                 <p>Ingresa tus credenciales institucionales. Ningún usuario queda seleccionado por defecto.</p>
             </div>
 
-            <?php if ($error_login): ?>
-                <div class="error-message"><i class="fas fa-triangle-exclamation"></i><span><?php echo htmlspecialchars($error_login); ?></span></div>
-            <?php endif; ?>
+            <div id="configWarning" class="error-message hidden"><i class="fas fa-triangle-exclamation"></i><span>Supabase no está configurado.</span></div>
+            <div id="loginError" class="error-message hidden"></div>
 
-            <form method="POST" action="" id="loginForm" autocomplete="off">
-                <input type="hidden" name="action" value="login">
-
-                <div class="form-group">
+            <form id="loginForm" autocomplete="off">
+<div class="form-group">
                     <label><i class="fas fa-envelope"></i> Correo institucional</label>
                     <div class="input-group">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" name="correo" class="form-control" placeholder="nombre.apellido@uniminuto.edu.co" autocomplete="username" required>
+                        <input id="correo" type="email" name="correo" class="form-control" placeholder="nombre.apellido@uniminuto.edu.co" autocomplete="username" required>
                     </div>
                 </div>
 
@@ -663,21 +616,21 @@ $roles = $pdo->query("SELECT * FROM roles ORDER BY id_rol")->fetchAll();
                     <label><i class="fas fa-lock"></i> Contraseña</label>
                     <div class="input-group">
                         <i class="fas fa-lock"></i>
-                        <input type="password" name="password" class="form-control" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+                        <input id="password" type="password" name="password" class="form-control" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label><i class="fas fa-user-tag"></i> Selecciona tu rol</label>
                     <div class="rol-buttons" id="rolButtons">
-                        <?php foreach ($roles as $rol): ?>
-                            <button type="button" class="rol-btn" data-rol-id="<?php echo (int)$rol['id_rol']; ?>">
-                                <i class="fas fa-user"></i>
-                                <span><?php echo htmlspecialchars($rol['nombre']); ?></span>
-                            </button>
-                        <?php endforeach; ?>
+                        <button type="button" class="rol-btn role-option" data-role="1"><i class="fas fa-crown"></i><span>Administrador</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="2"><i class="fas fa-clipboard-list"></i><span>Coordinador</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="3"><i class="fas fa-user-graduate"></i><span>Estudiante</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="4"><i class="fas fa-stethoscope"></i><span>Enfermero</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="5"><i class="fas fa-chalkboard-user"></i><span>Docente</span></button>
+                        <button type="button" class="rol-btn role-option" data-role="7"><i class="fas fa-heart-pulse"></i><span>Bienestar</span></button>
                     </div>
-                    <input type="hidden" name="rol_id" id="selectedRolId" value="">
+                    <input type="hidden" id="rolId" value="">
                 </div>
 
                 <div class="checkbox-group">
@@ -849,27 +802,10 @@ $roles = $pdo->query("SELECT * FROM roles ORDER BY id_rol")->fetchAll();
 
             frame();
         })();
-
-        const rolBtns = document.querySelectorAll('.rol-btn');
-        const selectedRolIdInput = document.getElementById('selectedRolId');
-        const loginForm = document.getElementById('loginForm');
         const botStage = document.getElementById('botStage');
         const loginCard = document.querySelector('.login-card');
 
-        rolBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                rolBtns.forEach(item => item.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedRolIdInput.value = this.getAttribute('data-rol-id');
-            });
-        });
 
-        loginForm.addEventListener('submit', function (event) {
-            if (!selectedRolIdInput.value) {
-                event.preventDefault();
-                alert('Selecciona tu rol antes de ingresar.');
-            }
-        });
 
         window.addEventListener('mousemove', function (event) {
             const cardRect = loginCard.getBoundingClientRect();
@@ -889,6 +825,10 @@ $roles = $pdo->query("SELECT * FROM roles ORDER BY id_rol")->fetchAll();
             botStage.style.setProperty('--eye-x', eyeX.toFixed(1) + 'px');
             botStage.style.setProperty('--eye-y', eyeY.toFixed(1) + 'px');
         });
+    </script>
+    <script type="module">
+        import { initLogin } from './assets/js/auth.js';
+        initLogin();
     </script>
 </body>
 </html>

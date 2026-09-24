@@ -73,7 +73,8 @@ CREATE TABLE public.consultas (
     tipo_consulta VARCHAR(30) DEFAULT 'Enfermería'
         CHECK (
             tipo_consulta IN (
-                'Enfermería',                'Medicina General'
+                'Enfermería',
+                'Medicina General'
             )
         ),
 

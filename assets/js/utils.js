@@ -1,0 +1,11 @@
+export const $=(s,r=document)=>r.querySelector(s);export const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+export function escapeHtml(v=''){const d=document.createElement('div');d.textContent=String(v??'');return d.innerHTML}
+export function initials(n=''){return n.trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]?.toUpperCase()||'').join('')}
+export function formatDate(v){if(!v)return '—';return new Intl.DateTimeFormat('es-CO',{dateStyle:'medium'}).format(new Date(v.length===10?v+'T00:00:00':v))}
+export function formatDateTime(v){if(!v)return '—';return new Intl.DateTimeFormat('es-CO',{dateStyle:'short',timeStyle:'short'}).format(new Date(v))}
+export function badgeClass(v=''){return String(v).replaceAll(' ','_')}
+export function showAlert(message,type='success'){let el=$('#globalAlert');if(!el){el=document.createElement('div');el.id='globalAlert';$('.content')?.prepend(el)}el.className='alert '+(type==='error'?'alert-error':type==='info'?'alert-info':'alert-success');el.textContent=message;setTimeout(()=>el?.remove(),5000)}
+export function openModal(id){$('#'+id)?.classList.add('open')}export function closeModal(id){$('#'+id)?.classList.remove('open')}
+export function wireModal(id){const m=$('#'+id);if(!m)return;m.addEventListener('click',e=>{if(e.target===m||e.target.closest('[data-close-modal]'))closeModal(id)})}
+export function downloadCsv(filename,rows,columns){const esc=v=>'"'+String(v??'').replaceAll('"','""')+'"';const csv=[columns.map(c=>esc(c.label)).join(','),...rows.map(r=>columns.map(c=>esc(typeof c.value==='function'?c.value(r):r[c.value])).join(','))].join('\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url)}
+export function parseCsv(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return[];const parse=l=>{const out=[];let cur='',q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){cur+='"';i++}else q=!q}else if(ch===','&&!q){out.push(cur);cur=''}else cur+=ch}out.push(cur);return out};const h=parse(lines[0]).map(x=>x.trim().toLowerCase());return lines.slice(1).map(l=>{const row=parse(l);return Object.fromEntries(h.map((k,i)=>[k,row[i]??'']))})}

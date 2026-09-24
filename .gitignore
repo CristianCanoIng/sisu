@@ -1,21 +1,11 @@
-# SISU - archivos locales y sensibles
 .env
 .env.*
-!.env.example
 config.php
 config.local.php
-
-# Archivos generados/subidos por usuarios
-uploads/incapacidades/*
-!uploads/incapacidades/.gitkeep
-
-# Logs y temporales
-*.log
-*.tmp
-*.bak
+uploads/*
+!uploads/.gitkeep
+storage/
+node_modules/
+.vscode/
 .DS_Store
 Thumbs.db
-
-# IDE
-.vscode/
-.idea/
