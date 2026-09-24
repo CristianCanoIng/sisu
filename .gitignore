@@ -1,0 +1,11 @@
+.env
+.env.*
+config.php
+config.local.php
+uploads/*
+!uploads/.gitkeep
+storage/
+node_modules/
+.vscode/
+.DS_Store
+Thumbs.db

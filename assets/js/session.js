@@ -1,0 +1,5 @@
+import{assertSupabaseConfigured,supabase}from'./supabase.js';import{puedeVer}from'./permisos.js';let cache=null;
+export async function getUser(){assertSupabaseConfigured();const{data:{user},error}=await supabase.auth.getUser();return error?null:user}
+export async function getProfile(force=false){if(cache&&!force)return cache;const user=await getUser();if(!user)return null;const{data,error}=await supabase.from('usuarios').select('id_usuario,auth_user_id,nombre,correo,documento,telefono,id_rol,estado,roles(nombre)').eq('auth_user_id',user.id).maybeSingle();if(error)throw error;if(!data||data.estado!=='Activo'){await supabase.auth.signOut();return null}cache=data;return data}
+export async function requireProfile(modulo=null){const p=await getProfile();if(!p){location.replace('./index.html');throw new Error('No autenticado')}if(modulo&&!puedeVer(p.id_rol,modulo)){location.replace('./dashboard.html');throw new Error('Sin permiso')}return p}
+export function clearProfile(){cache=null}
