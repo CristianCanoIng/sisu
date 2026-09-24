@@ -2,7 +2,7 @@
 ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS auth_user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.usuarios ALTER COLUMN password DROP NOT NULL;
 -- Retirar completamente el rol y el tipo de consulta eliminados.
-UPDATE public.consultas SET tipo_consulta = NULL WHERE tipo_consulta = 'Psicología';
+UPDATE public.consultas SET tipo_consulta = NULL WHERE tipo_consulta IS NOT NULL AND tipo_consulta NOT IN ('Enfermería','Medicina General');
 ALTER TABLE public.consultas DROP CONSTRAINT IF EXISTS consultas_tipo_consulta_check;
 ALTER TABLE public.consultas ADD CONSTRAINT consultas_tipo_consulta_check
 CHECK (tipo_consulta IS NULL OR tipo_consulta IN ('Enfermería','Medicina General'));
