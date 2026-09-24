@@ -174,7 +174,6 @@ La rama `main` contiene la versión preparada para despliegue estático.
 ## Colaboradores
 
 - **CristianCanoIng** - [Perfil GitHub](https://github.com/CristianCanoIng)
-- **DanielMoreno01** - [Perfil GitHub](https://github.com/DanielMoreno01)
 
 ---
 
