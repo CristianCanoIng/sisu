@@ -1,7 +1,13 @@
 -- SISU: ejecutar primero database/bd.sql en un proyecto Supabase nuevo y luego este archivo.
 ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS auth_user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.usuarios ALTER COLUMN password DROP NOT NULL;
-INSERT INTO public.roles(id_rol,nombre,descripcion) OVERRIDING SYSTEM VALUE VALUES (6,'Psicólogo','Gestiona consultas de psicología') ON CONFLICT (id_rol) DO UPDATE SET nombre=EXCLUDED.nombre,descripcion=EXCLUDED.descripcion;
+-- Retirar completamente el rol y el tipo de consulta eliminados.
+UPDATE public.consultas SET tipo_consulta = NULL WHERE tipo_consulta = 'Psicología';
+ALTER TABLE public.consultas DROP CONSTRAINT IF EXISTS consultas_tipo_consulta_check;
+ALTER TABLE public.consultas ADD CONSTRAINT consultas_tipo_consulta_check
+CHECK (tipo_consulta IS NULL OR tipo_consulta IN ('Enfermería','Medicina General'));
+UPDATE public.usuarios SET id_rol = NULL WHERE id_rol = 6;
+DELETE FROM public.roles WHERE id_rol = 6;
 CREATE UNIQUE INDEX IF NOT EXISTS inventario_codigo_unique ON public.inventario(codigo) WHERE codigo IS NOT NULL;
 CREATE INDEX IF NOT EXISTS usuarios_auth_user_idx ON public.usuarios(auth_user_id);
 -- Bucket privado para soportes de incapacidades
