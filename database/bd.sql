@@ -74,7 +74,6 @@ CREATE TABLE public.consultas (
         CHECK (
             tipo_consulta IN (
                 'Enfermería',
-                'Psicología',
                 'Medicina General'
             )
         ),
