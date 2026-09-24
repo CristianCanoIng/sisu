@@ -1,0 +1,60 @@
+/* Estilos adicionales para otros módulos */
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #003DA5;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #003DA5;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #002470;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.btn-success {
+    background: #16a34a;
+    color: white;
+}
+
+.btn-sm {
+    padding: 5px 12px;
+    font-size: 12px;
+}
