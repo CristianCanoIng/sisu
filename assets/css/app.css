@@ -557,3 +557,210 @@ select.form-control{cursor:pointer}
     transition-duration:.001ms!important;
   }
 }
+
+
+/* ====== FONDOS VISUALES SISU ====== */
+/* Menú lateral: patrón tecnológico + luces sutiles */
+.sidebar{
+  background:
+    radial-gradient(circle at 18% 10%,rgba(255,206,0,.20),transparent 20%),
+    radial-gradient(circle at 88% 75%,rgba(255,255,255,.09),transparent 24%),
+    linear-gradient(180deg,#073b9c 0%,#003698 44%,#00276d 100%);
+}
+.sidebar::before{
+  width:220px;
+  height:220px;
+  right:-96px;
+  top:92px;
+  border:1px solid rgba(255,206,0,.42);
+  box-shadow:
+    0 0 0 34px rgba(255,206,0,.035),
+    0 0 0 68px rgba(255,255,255,.025);
+  animation:orbFloat 10s ease-in-out infinite,ringPulse 7s ease-in-out infinite;
+}
+.sidebar::after{
+  width:360px;
+  height:360px;
+  left:-225px;
+  bottom:-95px;
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:
+    0 0 0 45px rgba(255,255,255,.025),
+    0 0 0 90px rgba(255,206,0,.022);
+  animation:orbFloat 15s ease-in-out infinite reverse;
+}
+.sidebar-header::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.22;
+  background-image:
+    linear-gradient(30deg,rgba(255,255,255,.12) 12%,transparent 12.5%,transparent 87%,rgba(255,255,255,.12) 87.5%),
+    linear-gradient(150deg,rgba(255,255,255,.12) 12%,transparent 12.5%,transparent 87%,rgba(255,255,255,.12) 87.5%);
+  background-size:26px 44px;
+  mask-image:linear-gradient(to bottom,#000,transparent);
+}
+.nav-menu{
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:28px 28px;
+  background-position:center;
+}
+
+/* Área derecha: fondo con malla, ondas y "aurora" suave */
+.main-content{
+  background:
+    radial-gradient(circle at 87% 7%,rgba(0,54,152,.10),transparent 21%),
+    radial-gradient(circle at 8% 90%,rgba(255,206,0,.12),transparent 22%),
+    linear-gradient(180deg,rgba(255,255,255,.52),rgba(244,247,252,.82));
+}
+.main-content::before{
+  width:430px;
+  height:430px;
+  right:-155px;
+  top:70px;
+  background:
+    radial-gradient(circle at 50% 50%,rgba(0,54,152,.12) 0 2px,transparent 3px),
+    radial-gradient(circle,rgba(0,54,152,.08),rgba(0,54,152,0) 68%);
+  background-size:28px 28px,100% 100%;
+  animation:shapeDrift 17s ease-in-out infinite;
+}
+.main-content::after{
+  width:390px;
+  height:390px;
+  left:300px;
+  bottom:-155px;
+  background:
+    repeating-radial-gradient(circle at center,rgba(255,206,0,.09) 0 1px,transparent 2px 22px),
+    radial-gradient(circle,rgba(255,206,0,.14),rgba(255,206,0,0) 70%);
+  animation:shapeDrift 21s ease-in-out infinite reverse;
+}
+
+/* Patrón decorativo global detrás del contenido */
+.content::before{
+  content:"";
+  position:fixed;
+  inset:68px 0 0 280px;
+  pointer-events:none;
+  z-index:-1;
+  opacity:.38;
+  background-image:
+    linear-gradient(115deg,transparent 0 46%,rgba(0,54,152,.025) 47% 48%,transparent 49% 100%),
+    linear-gradient(65deg,transparent 0 46%,rgba(255,206,0,.028) 47% 48%,transparent 49% 100%);
+  background-size:78px 78px;
+}
+
+/* Fondos blancos con detalle gráfico, sin perder legibilidad */
+.card,
+.stat-card,
+.event-card{
+  background:
+    radial-gradient(circle at 100% 0%,rgba(0,54,152,.055),transparent 25%),
+    radial-gradient(circle at 0% 100%,rgba(255,206,0,.055),transparent 26%),
+    linear-gradient(145deg,rgba(255,255,255,.97),rgba(248,251,255,.93));
+}
+.card::after{
+  content:"";
+  position:absolute;
+  width:170px;
+  height:170px;
+  right:-84px;
+  top:-92px;
+  border-radius:50%;
+  border:1px solid rgba(0,54,152,.07);
+  box-shadow:
+    0 0 0 22px rgba(0,54,152,.018),
+    0 0 0 44px rgba(255,206,0,.018);
+  pointer-events:none;
+  transition:transform .45s ease,opacity .45s ease;
+  opacity:.85;
+}
+.card:hover::after{
+  transform:scale(1.08) rotate(8deg);
+  opacity:1;
+}
+.card-header{
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(90deg,rgba(0,54,152,.045),transparent 42%),
+    linear-gradient(180deg,rgba(255,255,255,.91),rgba(247,250,255,.88));
+}
+.card-header::after{
+  content:"";
+  position:absolute;
+  right:-18px;
+  top:50%;
+  width:90px;
+  height:90px;
+  border-radius:26px;
+  transform:translateY(-50%) rotate(28deg);
+  background:linear-gradient(135deg,rgba(255,206,0,.07),rgba(0,54,152,.035));
+  pointer-events:none;
+}
+.card-header > *{position:relative;z-index:1}
+
+.stat-card{
+  min-height:92px;
+}
+.stat-card::before{
+  content:"";
+  position:absolute;
+  inset:auto -18px -30px auto;
+  width:88px;
+  height:88px;
+  border:1px solid rgba(0,54,152,.08);
+  border-radius:28px;
+  transform:rotate(24deg);
+  transition:transform .35s ease;
+}
+.stat-card:hover::before{
+  transform:rotate(38deg) scale(1.08);
+}
+
+/* Barra superior con un ligero acabado "premium" */
+.top-bar{
+  background:
+    radial-gradient(circle at 92% 0%,rgba(255,206,0,.08),transparent 24%),
+    rgba(255,255,255,.84);
+}
+.top-bar::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.28;
+  background-image:linear-gradient(120deg,transparent 0 48%,rgba(0,54,152,.035) 49% 50%,transparent 51% 100%);
+  background-size:55px 55px;
+}
+
+/* El dashboard gana un "hero" con textura */
+.welcome{
+  background:
+    radial-gradient(circle at 82% 20%,rgba(255,206,0,.24),transparent 18%),
+    radial-gradient(circle at 12% 112%,rgba(255,255,255,.11),transparent 30%),
+    linear-gradient(135deg,#0644ae 0%,#003698 46%,#00276d 100%);
+}
+.welcome::before{
+  width:210px;
+  height:210px;
+  right:-65px;
+  bottom:-100px;
+  box-shadow:
+    0 0 0 28px rgba(255,255,255,.025),
+    0 0 0 56px rgba(255,206,0,.022);
+}
+
+/* Animaciones extras del fondo */
+@keyframes ringPulse{
+  0%,100%{box-shadow:0 0 0 34px rgba(255,206,0,.035),0 0 0 68px rgba(255,255,255,.025)}
+  50%{box-shadow:0 0 0 45px rgba(255,206,0,.02),0 0 0 88px rgba(255,255,255,.015)}
+}
+
+@media(max-width:780px){
+  .content::before{inset:64px 0 0 0}
+  .main-content::after{left:-130px}
+  .sidebar::before{right:-125px}
+}
