@@ -2,10 +2,20 @@
 .env.*
 config.php
 config.local.php
-uploads/*
-!uploads/.gitkeep
-storage/
+
+# Dependencias y archivos locales
 node_modules/
+storage/
 .vscode/
+.idea/
 .DS_Store
 Thumbs.db
+
+# Archivos temporales
+*.log
+*.tmp
+*.bak
+
+# Cargas de usuarios: deben vivir en Supabase Storage
+uploads/*
+!uploads/.gitkeep
