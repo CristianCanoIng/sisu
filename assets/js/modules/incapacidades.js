@@ -9,7 +9,13 @@ async function loadStudents(){
 async function load(){
  const{data,error}=await supabase.from('incapacidades').select('*,pacientes(id_usuario,codigo_estudiantil,programa_academico,usuarios(nombre)),radicador:radicada_por(nombre),revisor_enfermeria:revisada_enfermeria_por(nombre),revisor_coordinacion:revisada_coordinacion_por(nombre),aprobador:aprobado_por(nombre)').order('fecha_radicacion',{ascending:false});
  if(error)throw error;
- return data||[];
+ const rows=data||[];
+ if(!teacher)return rows;
+ return rows.map(i=>{
+  const s=students.find(x=>Number(x.id_paciente)===Number(i.id_paciente));
+  if(!s)return i;
+  return {...i,pacientes:i.pacientes||{id_usuario:s.id_usuario,codigo_estudiantil:s.codigo_estudiantil,programa_academico:s.programa_academico,usuarios:{nombre:s.nombre}}};
+ });
 }
 function flowCard(){
  return '<div class="alert alert-info"><strong>Flujo de incapacidad:</strong> Radicación por estudiante o profesor de apoyo → revisión de Enfermería → aprobación final de Coordinación. El profesor de apoyo puede consultar el estado de las incapacidades que haya radicado.</div>';
