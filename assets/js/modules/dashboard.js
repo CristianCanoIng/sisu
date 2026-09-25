@@ -21,7 +21,7 @@ async function renderBienestar(){
  const studentIds=[...new Set((loans||[]).map(x=>x.id_estudiante))];
  let implementos=[],estudiantes=[];
  if(itemIds.length){const r=await supabase.from('implementos_deportivos').select('id_implemento,nombre,codigo').in('id_implemento',itemIds);implementos=r.data||[]}
- if(studentIds.length){const catalog=await loadOperationalStudents();estudiantes=catalog.filter(x=>studentIds.includes(x.id_usuario))}
+ if(studentIds.length){try{const catalog=await loadOperationalStudents();estudiantes=catalog.filter(x=>studentIds.includes(x.id_usuario))}catch{const rr=await supabase.from('usuarios').select('id_usuario,nombre').in('id_usuario',studentIds);estudiantes=rr.data||[]}}
  const im=new Map(implementos.map(x=>[Number(x.id_implemento),x]));
  const es=new Map(estudiantes.map(x=>[Number(x.id_usuario),x]));
  const cards=stat('Actividades activas',activas,'fa-heartbeat')+stat('Participaciones',participaciones,'fa-users')+stat('Unidades deportivas disponibles',unidades,'fa-basketball')+stat('Préstamos activos',prestamosActivos,'fa-handshake');
