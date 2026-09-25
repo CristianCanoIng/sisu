@@ -8,9 +8,6 @@ RETURNS TABLE(
  id_usuario bigint,
  codigo_estudiantil varchar,
  nombre varchar,
- documento varchar,
- correo varchar,
- telefono varchar,
  programa_academico varchar,
  semestre integer,
  estado varchar
@@ -25,7 +22,7 @@ BEGIN
  END IF;
 
  RETURN QUERY
- SELECT p.id_paciente,u.id_usuario,p.codigo_estudiantil,u.nombre,u.documento,u.correo,u.telefono,p.programa_academico,p.semestre,u.estado
+ SELECT p.id_paciente,u.id_usuario,p.codigo_estudiantil,u.nombre,p.programa_academico,p.semestre,u.estado
  FROM public.pacientes p
  JOIN public.usuarios u ON u.id_usuario=p.id_usuario
  WHERE u.id_rol=3
