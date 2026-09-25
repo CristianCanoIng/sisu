@@ -190,9 +190,6 @@ RETURNS TABLE(
  id_usuario bigint,
  codigo_estudiantil varchar,
  nombre varchar,
- documento varchar,
- correo varchar,
- telefono varchar,
  programa_academico varchar,
  semestre integer,
  estado varchar
@@ -201,7 +198,7 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 BEGIN
  IF public.mi_rol() NOT IN (1,2,4,5,7) THEN RAISE EXCEPTION 'Sin permiso para consultar estudiantes'; END IF;
  RETURN QUERY
- SELECT p.id_paciente,u.id_usuario,p.codigo_estudiantil,u.nombre,u.documento,u.correo,u.telefono,p.programa_academico,p.semestre,u.estado
+ SELECT p.id_paciente,u.id_usuario,p.codigo_estudiantil,u.nombre,p.programa_academico,p.semestre,u.estado
  FROM public.pacientes p JOIN public.usuarios u ON u.id_usuario=p.id_usuario
  WHERE u.id_rol=3
  ORDER BY p.codigo_estudiantil NULLS LAST,u.nombre;
