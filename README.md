@@ -44,11 +44,12 @@ El proyecto principal ya no depende de PHP para ejecutar la aplicación.
 ### Módulos principales
 
 - **Dashboard:** indicadores y actividad reciente.
-- **Usuarios:** administración de usuarios, roles y permisos.
+- **Usuarios:** administración de usuarios, roles y permisos; para estudiantes se utiliza el ID institucional como identificador principal.
 - **Enfermería:** registro y seguimiento de consultas.
 - **Incapacidades:** radicación con soporte por estudiante o profesor de apoyo, revisión de Enfermería, aprobación final de Coordinación y seguimiento de estado.
 - **Bienestar:** administración de actividades universitarias.
-- **Acompañamiento:** seguimiento de procesos de acompañamiento.
+- **Acompañamiento:** seguimiento de procesos de acompañamiento con búsqueda por ID de estudiante y creación rápida de estudiantes.
+- **Implementos deportivos:** préstamos y devoluciones con búsqueda o alta rápida del estudiante por ID institucional.
 - **Inventario y reportes:** módulos complementarios de gestión.
 
 ---
