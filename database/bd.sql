@@ -322,5 +322,5 @@ VALUES
 (2, 'Coordinador', 'Coordina actividades y aprueba incapacidades'),
 (3, 'Estudiante', 'Acceso a servicios de salud y bienestar'),
 (4, 'Enfermero', 'Gestiona consultas de enfermería'),
-(5, 'Docente', 'Visualiza incapacidades de sus estudiantes'),
+(5, 'Docente', 'Profesor de apoyo: radica incapacidades y consulta su estado'),
 (7, 'Bienestar', 'Gestiona actividades de bienestar estudiantil');
