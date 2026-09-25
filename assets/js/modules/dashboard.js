@@ -31,7 +31,7 @@ async function renderBienestar(){
 }
 async function renderGeneral(){
  const [consultas,incaps,actividades,usuarios,inventario]=await Promise.all([
-  count('consultas'),count('incapacidades',q=>q.in('estado',['Radicada','En revisión'])),count('actividades_bienestar',q=>q.eq('estado','Activa')),count('usuarios'),count('inventario')
+  count('consultas'),count('incapacidades',q=>q.in('estado',['Radicada','Pendiente coordinación'])),count('actividades_bienestar',q=>q.eq('estado','Activa')),count('usuarios'),count('inventario')
  ]);
  const [{data:incs},{data:cons},{data:acts}]=await Promise.all([
   supabase.from('incapacidades').select('id_incapacidad,fecha_inicio,estado,pacientes(programa_academico,usuarios(nombre))').order('fecha_radicacion',{ascending:false}).limit(5),
