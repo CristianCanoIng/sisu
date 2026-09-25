@@ -1,11 +1,101 @@
 import{requireProfile}from'../session.js';import{supabase}from'../supabase.js';import{renderNavbar}from'../navbar.js';import{escapeHtml,formatDate,badgeClass,showAlert,openModal,closeModal,wireModal,$,downloadCsv}from'../utils.js';
-const p=await requireProfile('incapacidades');renderNavbar(p,'incapacidades');const student=Number(p.id_rol)===3,manager=[1,2].includes(Number(p.id_rol));
-async function load(){let q=supabase.from('incapacidades').select('*,pacientes(id_usuario,codigo_estudiantil,programa_academico,usuarios(nombre)),aprobador:aprobado_por(nombre)').order('fecha_radicacion',{ascending:false});const{data,error}=await q;if(error)throw error;return(data||[]).filter(i=>!student||i.pacientes?.id_usuario===p.id_usuario)}
-function modal(){return student?`<div id="incModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Nueva incapacidad</h3><button class="close-btn" data-close-modal>&times;</button></div><form id="incForm"><div class="modal-body"><div class="form-grid"><div class="form-group full"><label>Motivo</label><input id="motivo" class="form-control" required></div><div class="form-group"><label>Fecha inicio</label><input id="inicio" class="form-control" type="date" required></div><div class="form-group"><label>Fecha fin</label><input id="fin" class="form-control" type="date" required></div><div class="form-group full"><label>Diagnóstico</label><textarea id="diag" class="form-control"></textarea></div><div class="form-group full"><label>Observaciones</label><textarea id="obs" class="form-control"></textarea></div><div class="form-group full"><label>Soporte (PDF/JPG/PNG, máx. 5MB)</label><input id="file" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-close-modal>Cancelar</button><button class="btn btn-primary">Radicar</button></div></form></div></div>`:''}
-async function render(){const rows=await load();const pending=rows.filter(i=>['Radicada','En revisión'].includes(i.estado)).length,approved=rows.filter(i=>i.estado==='Aprobada').length,rejected=rows.filter(i=>i.estado==='Rechazada').length;$('#topActions').innerHTML='<button id="exportInc" class="btn btn-success"><i class="fas fa-file-csv"></i> Exportar CSV</button>'+(student?'<button id="newInc" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva incapacidad</button>':'');$('#app').innerHTML=`<div class="stats-grid"><div class="stat-card"><div class="stat-value">${rows.length}</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-value">${pending}</div><div class="stat-label">Pendientes</div></div><div class="stat-card"><div class="stat-value">${approved}</div><div class="stat-label">Aprobadas</div></div><div class="stat-card"><div class="stat-value">${rejected}</div><div class="stat-label">Rechazadas</div></div></div><div class="card"><div class="card-header"><h3>Incapacidades</h3></div><div class="card-body">${rows.length?`<table class="data-table"><thead><tr><th>ID</th><th>Estudiante</th><th>Programa</th><th>Motivo</th><th>Periodo</th><th>Estado</th><th>Soporte</th><th>Acciones</th></tr></thead><tbody>${rows.map(i=>`<tr><td>#${String(i.id_incapacidad).padStart(4,'0')}</td><td>${escapeHtml(i.pacientes?.usuarios?.nombre||'—')}</td><td>${escapeHtml(i.pacientes?.programa_academico||'—')}</td><td>${escapeHtml((i.motivo||'').slice(0,45))}</td><td>${formatDate(i.fecha_inicio)}<br><small>${formatDate(i.fecha_fin)}</small></td><td><span class="badge badge-${badgeClass(i.estado)}">${escapeHtml(i.estado)}</span></td><td>${i.archivo_soporte?`<button class="btn btn-light btn-sm support" data-path="${escapeHtml(i.archivo_soporte)}">Ver</button>`:'—'}</td><td><div class="actions">${manager&&['Radicada','En revisión'].includes(i.estado)?`<button class="btn btn-success btn-sm approve" data-id="${i.id_incapacidad}">Aprobar</button><button class="btn btn-danger btn-sm reject" data-id="${i.id_incapacidad}">Rechazar</button>`:''}${Number(p.id_rol)===1?`<button class="btn btn-light btn-sm del" data-id="${i.id_incapacidad}">Eliminar</button>`:''}</div></td></tr>`).join('')}</tbody></table>`:'<div class="empty-state">No hay incapacidades registradas</div>'}</div></div>${modal()}`;$('#exportInc').onclick=()=>exportInc(rows);if(student){wireModal('incModal');$('#newInc').onclick=()=>openModal('incModal');$('#incForm').onsubmit=save}document.querySelectorAll('.approve').forEach(b=>b.onclick=()=>state(b.dataset.id,'Aprobada'));document.querySelectorAll('.reject').forEach(b=>b.onclick=()=>state(b.dataset.id,'Rechazada'));document.querySelectorAll('.del').forEach(b=>b.onclick=()=>del(b.dataset.id));document.querySelectorAll('.support').forEach(b=>b.onclick=()=>openSupport(b.dataset.path))}
-function exportInc(rows){downloadCsv('incapacidades_'+new Date().toISOString().slice(0,10)+'.csv',rows,[{label:'ID',value:'id_incapacidad'},{label:'Estudiante',value:r=>r.pacientes?.usuarios?.nombre||''},{label:'Codigo estudiantil',value:r=>r.pacientes?.codigo_estudiantil||''},{label:'Programa',value:r=>r.pacientes?.programa_academico||''},{label:'Motivo',value:'motivo'},{label:'Diagnostico',value:'diagnostico'},{label:'Fecha inicio',value:'fecha_inicio'},{label:'Fecha fin',value:'fecha_fin'},{label:'Dias',value:'dias_totales'},{label:'Estado',value:'estado'},{label:'Observaciones',value:'observaciones'}])}
-async function save(e){e.preventDefault();const{data:pac}=await supabase.from('pacientes').select('id_paciente').eq('id_usuario',p.id_usuario).maybeSingle();if(!pac)return showAlert('No se encontró perfil de paciente.','error');const start=new Date($('#inicio').value+'T00:00:00'),end=new Date($('#fin').value+'T00:00:00');if(end<start)return showAlert('La fecha final no puede ser anterior.','error');let path=null,f=$('#file').files[0];if(f){if(f.size>5*1024*1024)return showAlert('El archivo supera 5 MB.','error');if(!['application/pdf','image/jpeg','image/png'].includes(f.type))return showAlert('Formato no permitido.','error');path=`${p.id_usuario}/${crypto.randomUUID()}-${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;const{error}=await supabase.storage.from('incapacidades').upload(path,f);if(error)return showAlert(error.message,'error')}const days=Math.floor((end-start)/86400000)+1;const{error}=await supabase.from('incapacidades').insert({id_paciente:pac.id_paciente,fecha_inicio:$('#inicio').value,fecha_fin:$('#fin').value,dias_totales:days,motivo:$('#motivo').value.trim(),diagnostico:$('#diag').value.trim(),observaciones:$('#obs').value.trim(),archivo_soporte:path,estado:'Radicada'});if(error)return showAlert(error.message,'error');closeModal('incModal');showAlert('Incapacidad radicada');render()}
-async function state(id,estado){const patch={estado};if(estado==='Aprobada'){patch.fecha_aprobacion=new Date().toISOString();patch.aprobado_por=p.id_usuario}const{error}=await supabase.from('incapacidades').update(patch).eq('id_incapacidad',id);if(error)return showAlert(error.message,'error');render()}
-async function del(id){if(!confirm('¿Eliminar incapacidad?'))return;const{error}=await supabase.from('incapacidades').delete().eq('id_incapacidad',id);if(error)return showAlert(error.message,'error');render()}
-async function openSupport(path){const{data,error}=await supabase.storage.from('incapacidades').createSignedUrl(path,300);if(error)return showAlert(error.message,'error');window.open(data.signedUrl,'_blank','noopener')}
-render();
+const p=await requireProfile('incapacidades');renderNavbar(p,'incapacidades');
+const role=Number(p.id_rol),student=role===3,teacher=role===5,nurse=role===4,coordinator=role===2,admin=role===1,canSubmit=student||teacher;
+let students=[];
+async function loadStudents(){
+ if(!teacher)return;
+ const{data,error}=await supabase.rpc('listar_estudiantes_incapacidades');
+ if(error)throw error;
+ students=data||[];
+}
+async function load(){
+ const{data,error}=await supabase.from('incapacidades').select('*,pacientes(id_usuario,codigo_estudiantil,programa_academico,usuarios(nombre)),radicador:radicada_por(nombre),revisor_enfermeria:revisada_enfermeria_por(nombre),revisor_coordinacion:revisada_coordinacion_por(nombre),aprobador:aprobado_por(nombre)').order('fecha_radicacion',{ascending:false});
+ if(error)throw error;
+ return data||[];
+}
+function flowCard(){
+ return '<div class="alert alert-info"><strong>Flujo de incapacidad:</strong> Radicación por estudiante o profesor de apoyo → revisión de Enfermería → aprobación final de Coordinación. El profesor de apoyo puede consultar el estado de las incapacidades que haya radicado.</div>';
+}
+function modal(){
+ if(!canSubmit)return '';
+ const studentField=teacher?`<div class="form-group full"><label>Estudiante</label><select id="idPaciente" class="form-control" required><option value="">Seleccionar estudiante...</option>${students.map(s=>`<option value="${s.id_paciente}">${escapeHtml(s.nombre||'')} - ${escapeHtml(s.codigo_estudiantil||'Sin código')} - ${escapeHtml(s.programa_academico||'')}</option>`).join('')}</select></div>`:'';
+ return `<div id="incModal" class="modal"><div class="modal-content"><div class="modal-header"><h3>Formulario de radicación de incapacidad</h3><button class="close-btn" data-close-modal>&times;</button></div><form id="incForm"><div class="modal-body"><div class="form-grid">${studentField}<div class="form-group full"><label>Motivo</label><input id="motivo" class="form-control" required></div><div class="form-group"><label>Fecha inicio</label><input id="inicio" class="form-control" type="date" required></div><div class="form-group"><label>Fecha fin</label><input id="fin" class="form-control" type="date" required></div><div class="form-group full"><label>Diagnóstico</label><textarea id="diag" class="form-control"></textarea></div><div class="form-group full"><label>Observaciones</label><textarea id="obs" class="form-control" placeholder="Información adicional para Enfermería y Coordinación"></textarea></div><div class="form-group full"><label>Adjunto de incapacidad (PDF/JPG/PNG, máx. 5 MB)</label><input id="file" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" required></div></div><div class="alert alert-info">El soporte se almacena de forma privada. Después de radicarlo, Enfermería realiza la primera revisión y Coordinación la aprobación final.</div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-close-modal>Cancelar</button><button class="btn btn-primary">Radicar incapacidad</button></div></form></div></div>`;
+}
+async function render(){
+ const rows=await load();
+ const pendingNurse=rows.filter(i=>i.estado==='Radicada').length;
+ const pendingCoord=rows.filter(i=>i.estado==='Pendiente coordinación').length;
+ const approved=rows.filter(i=>i.estado==='Aprobada').length;
+ const rejected=rows.filter(i=>String(i.estado).startsWith('Rechazada')).length;
+ $('#topActions').innerHTML='<button id="exportInc" class="btn btn-success"><i class="fas fa-file-csv"></i> Exportar CSV</button>'+(canSubmit?'<button id="newInc" class="btn btn-primary"><i class="fas fa-paperclip"></i> Radicar incapacidad</button>':'');
+ $('#app').innerHTML=flowCard()+`<div class="stats-grid"><div class="stat-card"><div class="stat-value">${rows.length}</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-value">${pendingNurse}</div><div class="stat-label">Pendientes Enfermería</div></div><div class="stat-card"><div class="stat-value">${pendingCoord}</div><div class="stat-label">Pendientes Coordinación</div></div><div class="stat-card"><div class="stat-value">${approved}</div><div class="stat-label">Aprobadas</div></div><div class="stat-card"><div class="stat-value">${rejected}</div><div class="stat-label">Rechazadas</div></div></div><div class="card"><div class="card-header"><h3>Seguimiento de incapacidades</h3></div><div class="card-body">${rows.length?`<table class="data-table"><thead><tr><th>ID</th><th>Estudiante</th><th>Programa</th><th>Motivo</th><th>Periodo</th><th>Radicada por</th><th>Estado</th><th>Soporte</th><th>Acciones</th></tr></thead><tbody>${rows.map(i=>`<tr><td>#${String(i.id_incapacidad).padStart(4,'0')}</td><td>${escapeHtml(i.pacientes?.usuarios?.nombre||'—')}</td><td>${escapeHtml(i.pacientes?.programa_academico||'—')}</td><td>${escapeHtml((i.motivo||'').slice(0,45))}</td><td>${formatDate(i.fecha_inicio)}<br><small>${formatDate(i.fecha_fin)}</small></td><td>${escapeHtml(i.radicador?.nombre||i.pacientes?.usuarios?.nombre||'—')}</td><td><span class="badge badge-${badgeClass(i.estado)}">${escapeHtml(i.estado)}</span>${i.observacion_enfermeria?`<br><small>Enfermería: ${escapeHtml(i.observacion_enfermeria)}</small>`:''}${i.observacion_coordinacion?`<br><small>Coordinación: ${escapeHtml(i.observacion_coordinacion)}</small>`:''}</td><td>${i.archivo_soporte?`<div class="actions"><button class="btn btn-light btn-sm support" data-path="${escapeHtml(i.archivo_soporte)}">Ver</button><button class="btn btn-light btn-sm download" data-path="${escapeHtml(i.archivo_soporte)}">Descargar</button></div>`:'—'}</td><td><div class="actions">${nurse&&i.estado==='Radicada'?`<button class="btn btn-success btn-sm nurseApprove" data-id="${i.id_incapacidad}">Aprobar Enfermería</button><button class="btn btn-danger btn-sm nurseReject" data-id="${i.id_incapacidad}">Rechazar</button>`:''}${coordinator&&i.estado==='Pendiente coordinación'?`<button class="btn btn-success btn-sm coordApprove" data-id="${i.id_incapacidad}">Aprobar Coordinación</button><button class="btn btn-danger btn-sm coordReject" data-id="${i.id_incapacidad}">Rechazar</button>`:''}${admin?`<button class="btn btn-light btn-sm del" data-id="${i.id_incapacidad}">Eliminar</button>`:''}</div></td></tr>`).join('')}</tbody></table>`:'<div class="empty-state">No hay incapacidades registradas</div>'}</div></div>${modal()}`;
+ $('#exportInc').onclick=()=>exportInc(rows);
+ if(canSubmit){wireModal('incModal');$('#newInc').onclick=()=>openModal('incModal');$('#incForm').onsubmit=save}
+ document.querySelectorAll('.nurseApprove').forEach(b=>b.onclick=()=>nurseDecision(b.dataset.id,true));
+ document.querySelectorAll('.nurseReject').forEach(b=>b.onclick=()=>nurseDecision(b.dataset.id,false));
+ document.querySelectorAll('.coordApprove').forEach(b=>b.onclick=()=>coordDecision(b.dataset.id,true));
+ document.querySelectorAll('.coordReject').forEach(b=>b.onclick=()=>coordDecision(b.dataset.id,false));
+ document.querySelectorAll('.del').forEach(b=>b.onclick=()=>del(b.dataset.id));
+ document.querySelectorAll('.support').forEach(b=>b.onclick=()=>openSupport(b.dataset.path,false));
+ document.querySelectorAll('.download').forEach(b=>b.onclick=()=>openSupport(b.dataset.path,true));
+}
+function exportInc(rows){
+ downloadCsv('incapacidades_'+new Date().toISOString().slice(0,10)+'.csv',rows,[
+  {label:'ID',value:'id_incapacidad'},{label:'Estudiante',value:r=>r.pacientes?.usuarios?.nombre||''},{label:'Codigo estudiantil',value:r=>r.pacientes?.codigo_estudiantil||''},{label:'Programa',value:r=>r.pacientes?.programa_academico||''},{label:'Motivo',value:'motivo'},{label:'Diagnostico',value:'diagnostico'},{label:'Fecha inicio',value:'fecha_inicio'},{label:'Fecha fin',value:'fecha_fin'},{label:'Dias',value:'dias_totales'},{label:'Radicada por',value:r=>r.radicador?.nombre||''},{label:'Estado',value:'estado'},{label:'Revision Enfermeria',value:r=>r.revisor_enfermeria?.nombre||''},{label:'Observacion Enfermeria',value:'observacion_enfermeria'},{label:'Revision Coordinacion',value:r=>r.revisor_coordinacion?.nombre||''},{label:'Observacion Coordinacion',value:'observacion_coordinacion'},{label:'Observaciones',value:'observaciones'}
+ ]);
+}
+async function save(e){
+ e.preventDefault();
+ let patientId=null;
+ if(student){
+  const{data:pac,error}=await supabase.from('pacientes').select('id_paciente').eq('id_usuario',p.id_usuario).maybeSingle();
+  if(error)return showAlert(error.message,'error');
+  patientId=pac?.id_paciente||null;
+ }else{
+  patientId=Number($('#idPaciente').value||0)||null;
+ }
+ if(!patientId)return showAlert('Selecciona o verifica el estudiante.','error');
+ const start=new Date($('#inicio').value+'T00:00:00'),end=new Date($('#fin').value+'T00:00:00');
+ if(end<start)return showAlert('La fecha final no puede ser anterior.','error');
+ const f=$('#file').files[0];
+ if(!f)return showAlert('Debes adjuntar el soporte de la incapacidad.','error');
+ if(f.size>5*1024*1024)return showAlert('El archivo supera 5 MB.','error');
+ if(!['application/pdf','image/jpeg','image/png'].includes(f.type))return showAlert('Formato no permitido. Usa PDF, JPG o PNG.','error');
+ const path=`${p.id_usuario}/${crypto.randomUUID()}-${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+ const up=await supabase.storage.from('incapacidades').upload(path,f);
+ if(up.error)return showAlert(up.error.message,'error');
+ const days=Math.floor((end-start)/86400000)+1;
+ const{error}=await supabase.from('incapacidades').insert({id_paciente:patientId,fecha_inicio:$('#inicio').value,fecha_fin:$('#fin').value,dias_totales:days,motivo:$('#motivo').value.trim(),diagnostico:$('#diag').value.trim(),observaciones:$('#obs').value.trim(),archivo_soporte:path,radicada_por:p.id_usuario,estado:'Radicada'});
+ if(error){await supabase.storage.from('incapacidades').remove([path]);return showAlert(error.message,'error')}
+ closeModal('incModal');showAlert('Incapacidad radicada y enviada a Enfermería.');render();
+}
+async function nurseDecision(id,approve){
+ const obs=prompt(approve?'Observación de Enfermería (opcional):':'Motivo del rechazo por Enfermería:','');
+ if(obs===null)return;
+ if(!approve&&!obs.trim())return showAlert('Indica el motivo del rechazo.','error');
+ const{error}=await supabase.rpc('revisar_incapacidad_enfermeria',{p_id_incapacidad:Number(id),p_aprobar:approve,p_observacion:obs.trim()||null});
+ if(error)return showAlert(error.message,'error');
+ showAlert(approve?'Aprobada por Enfermería y enviada a Coordinación.':'Incapacidad rechazada por Enfermería.');
+ render();
+}
+async function coordDecision(id,approve){
+ const obs=prompt(approve?'Observación de Coordinación (opcional):':'Motivo del rechazo por Coordinación:','');
+ if(obs===null)return;
+ if(!approve&&!obs.trim())return showAlert('Indica el motivo del rechazo.','error');
+ const{error}=await supabase.rpc('resolver_incapacidad_coordinacion',{p_id_incapacidad:Number(id),p_aprobar:approve,p_observacion:obs.trim()||null});
+ if(error)return showAlert(error.message,'error');
+ showAlert(approve?'Incapacidad aprobada definitivamente.':'Incapacidad rechazada por Coordinación.');
+ render();
+}
+async function del(id){
+ if(!confirm('¿Eliminar incapacidad?'))return;
+ const{error}=await supabase.from('incapacidades').delete().eq('id_incapacidad',id);
+ if(error)return showAlert(error.message,'error');
+ render();
+}
+async function openSupport(path,download){
+ const result=download?await supabase.storage.from('incapacidades').createSignedUrl(path,300,{download:true}):await supabase.storage.from('incapacidades').createSignedUrl(path,300);
+ if(result.error)return showAlert(result.error.message,'error');
+ window.open(result.data.signedUrl,'_blank','noopener');
+}
+try{await loadStudents();await render()}catch(err){$('#app').innerHTML='<div class="alert alert-error">No fue posible cargar el flujo de incapacidades: '+escapeHtml(err.message||'Error')+'. Ejecuta la migración supabase/flujo_incapacidades.sql en Supabase.</div>'}
