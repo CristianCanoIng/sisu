@@ -136,3 +136,6 @@ CREATE POLICY incap_storage_read ON storage.objects FOR SELECT TO authenticated 
 UPDATE public.roles
 SET descripcion='Profesor de apoyo: radica incapacidades y consulta su estado'
 WHERE id_rol=5;
+
+-- Solicitar a PostgREST/Supabase que recargue el esquema y detecte las RPC nuevas.
+NOTIFY pgrst, 'reload schema';
