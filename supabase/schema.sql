@@ -10,6 +10,23 @@ UPDATE public.usuarios SET id_rol = NULL WHERE id_rol IS NOT NULL AND id_rol NOT
 DELETE FROM public.roles WHERE id_rol NOT IN (1,2,3,4,5,7);
 CREATE UNIQUE INDEX IF NOT EXISTS inventario_codigo_unique ON public.inventario(codigo) WHERE codigo IS NOT NULL;
 CREATE INDEX IF NOT EXISTS usuarios_auth_user_idx ON public.usuarios(auth_user_id);
+-- Flujo secuencial de incapacidades: radicación -> Enfermería -> Coordinación
+ALTER TABLE public.incapacidades ADD COLUMN IF NOT EXISTS radicada_por BIGINT REFERENCES public.usuarios(id_usuario) ON DELETE SET NULL;
+ALTER TABLE public.incapacidades ADD COLUMN IF NOT EXISTS revisada_enfermeria_por BIGINT REFERENCES public.usuarios(id_usuario) ON DELETE SET NULL;
+ALTER TABLE public.incapacidades ADD COLUMN IF NOT EXISTS fecha_revision_enfermeria TIMESTAMPTZ;
+ALTER TABLE public.incapacidades ADD COLUMN IF NOT EXISTS observacion_enfermeria TEXT;
+ALTER TABLE public.incapacidades ADD COLUMN IF NOT EXISTS revisada_coordinacion_por BIGINT REFERENCES public.usuarios(id_usuario) ON DELETE SET NULL;
+ALTER TABLE public.incapacidades ADD COLUMN IF NOT EXISTS fecha_revision_coordinacion TIMESTAMPTZ;
+ALTER TABLE public.incapacidades ADD COLUMN IF NOT EXISTS observacion_coordinacion TEXT;
+UPDATE public.incapacidades i SET radicada_por=p.id_usuario FROM public.pacientes p WHERE p.id_paciente=i.id_paciente AND i.radicada_por IS NULL;
+UPDATE public.incapacidades SET estado='Radicada' WHERE estado='En revisión';
+UPDATE public.incapacidades SET estado='Rechazada por Coordinación' WHERE estado='Rechazada';
+ALTER TABLE public.incapacidades ALTER COLUMN estado TYPE VARCHAR(40);
+ALTER TABLE public.incapacidades DROP CONSTRAINT IF EXISTS incapacidades_estado_check;
+ALTER TABLE public.incapacidades ADD CONSTRAINT incapacidades_estado_check CHECK (estado IN ('Radicada','Pendiente coordinación','Aprobada','Rechazada por Enfermería','Rechazada por Coordinación'));
+CREATE INDEX IF NOT EXISTS idx_incapacidades_radicada_por ON public.incapacidades(radicada_por);
+CREATE INDEX IF NOT EXISTS idx_incapacidades_estado ON public.incapacidades(estado);
+
 -- Bucket privado para soportes de incapacidades
 INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
 VALUES('incapacidades','incapacidades',false,5242880,ARRAY['application/pdf','image/jpeg','image/png'])
