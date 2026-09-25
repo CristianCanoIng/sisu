@@ -1,4 +1,4 @@
-import{requireProfile}from'../session.js';import{supabase}from'../supabase.js';import{renderNavbar}from'../navbar.js';import{escapeHtml,formatDate,formatDateTime,badgeClass,$}from'../utils.js';
+import{requireProfile}from'../session.js';import{supabase}from'../supabase.js';import{renderNavbar}from'../navbar.js';import{escapeHtml,formatDate,formatDateTime,badgeClass,$}from'../utils.js';import{loadOperationalStudents}from'../students.js';
 const p=await requireProfile('dashboard');renderNavbar(p,'dashboard');
 async function count(table,build=q=>q){const{count,error}=await build(supabase.from(table).select('*',{count:'exact',head:true}));if(error)throw error;return count||0}
 async function safeCount(table,build=q=>q){try{const{count,error}=await build(supabase.from(table).select('*',{count:'exact',head:true}));return error?0:(count||0)}catch{return 0}}
@@ -21,12 +21,12 @@ async function renderBienestar(){
  const studentIds=[...new Set((loans||[]).map(x=>x.id_estudiante))];
  let implementos=[],estudiantes=[];
  if(itemIds.length){const r=await supabase.from('implementos_deportivos').select('id_implemento,nombre,codigo').in('id_implemento',itemIds);implementos=r.data||[]}
- if(studentIds.length){const r=await supabase.from('usuarios').select('id_usuario,nombre,documento').in('id_usuario',studentIds);estudiantes=r.data||[]}
+ if(studentIds.length){const catalog=await loadOperationalStudents();estudiantes=catalog.filter(x=>studentIds.includes(x.id_usuario))}
  const im=new Map(implementos.map(x=>[Number(x.id_implemento),x]));
  const es=new Map(estudiantes.map(x=>[Number(x.id_usuario),x]));
  const cards=stat('Actividades activas',activas,'fa-heartbeat')+stat('Participaciones',participaciones,'fa-users')+stat('Unidades deportivas disponibles',unidades,'fa-basketball')+stat('Préstamos activos',prestamosActivos,'fa-handshake');
  const actsHtml=(acts||[]).length?'<table class="data-table"><thead><tr><th>Actividad</th><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Cupos</th></tr></thead><tbody>'+(acts||[]).map(a=>'<tr><td>'+escapeHtml(a.titulo)+'</td><td>'+formatDate(a.fecha)+'</td><td>'+escapeHtml(a.hora||'—')+'</td><td>'+escapeHtml(a.lugar||'—')+'</td><td>'+Number(a.cupos_disponibles||0)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty-state">Sin actividades próximas</div>';
- const loanHtml=(loans||[]).length?'<table class="data-table"><thead><tr><th>Estudiante</th><th>Implemento</th><th>Cantidad</th><th>Hora préstamo</th></tr></thead><tbody>'+(loans||[]).map(l=>{const u=es.get(Number(l.id_estudiante))||{},i=im.get(Number(l.id_implemento))||{};return '<tr><td>'+escapeHtml(u.nombre||'—')+'<br><small>'+escapeHtml(u.documento||'')+'</small></td><td>'+escapeHtml(i.nombre||'—')+'</td><td>'+Number(l.cantidad||1)+'</td><td>'+formatDateTime(l.fecha_prestamo)+'</td></tr>'}).join('')+'</tbody></table>':'<div class="empty-state">No hay implementos prestados en este momento</div>';
+ const loanHtml=(loans||[]).length?'<table class="data-table"><thead><tr><th>Estudiante</th><th>Implemento</th><th>Cantidad</th><th>Hora préstamo</th></tr></thead><tbody>'+(loans||[]).map(l=>{const u=es.get(Number(l.id_estudiante))||{},i=im.get(Number(l.id_implemento))||{};return '<tr><td><strong>'+escapeHtml(u.codigo_estudiantil||'—')+'</strong><br>'+escapeHtml(u.nombre||'—')+'</td><td>'+escapeHtml(i.nombre||'—')+'</td><td>'+Number(l.cantidad||1)+'</td><td>'+formatDateTime(l.fecha_prestamo)+'</td></tr>'}).join('')+'</tbody></table>':'<div class="empty-state">No hay implementos prestados en este momento</div>';
  $('#app').innerHTML=welcome('Panel de Bienestar Universitario')+'<div class="stats-grid">'+cards+'</div><div class="grid-2"><div class="card"><div class="card-header"><h3>Próximas actividades</h3><a href="./bienestar.html">Gestionar</a></div><div class="card-body">'+actsHtml+'</div></div><div class="card"><div class="card-header"><h3>Préstamos deportivos activos</h3><a href="./implementos-deportivos.html">Gestionar</a></div><div class="card-body">'+loanHtml+'</div></div></div>';
 }
 async function renderGeneral(){
