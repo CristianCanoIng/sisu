@@ -122,3 +122,60 @@ REVOKE ALL ON FUNCTION public.registrar_prestamo_implemento(bigint,bigint,intege
 REVOKE ALL ON FUNCTION public.registrar_devolucion_implemento(bigint,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.registrar_prestamo_implemento(bigint,bigint,integer,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.registrar_devolucion_implemento(bigint,text) TO authenticated;
+
+
+-- =========================
+-- FLUJO DE INCAPACIDADES
+-- =========================
+CREATE OR REPLACE FUNCTION public.listar_estudiantes_incapacidades()
+RETURNS TABLE(id_paciente bigint,id_usuario bigint,nombre varchar,codigo_estudiantil varchar,programa_academico varchar)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+ IF public.mi_rol()<>5 THEN RAISE EXCEPTION 'Sin permiso para consultar estudiantes'; END IF;
+ RETURN QUERY SELECT p.id_paciente,u.id_usuario,u.nombre,p.codigo_estudiantil,p.programa_academico
+ FROM public.pacientes p JOIN public.usuarios u ON u.id_usuario=p.id_usuario
+ WHERE u.id_rol=3 AND u.estado='Activo' ORDER BY u.nombre;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.revisar_incapacidad_enfermeria(p_id_incapacidad bigint,p_aprobar boolean,p_observacion text DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE uid bigint; estado_actual text;
+BEGIN
+ uid:=public.mi_usuario_id();
+ IF uid IS NULL OR public.mi_rol()<>4 THEN RAISE EXCEPTION 'Solo Enfermería puede realizar esta revisión'; END IF;
+ SELECT estado INTO estado_actual FROM public.incapacidades WHERE id_incapacidad=p_id_incapacidad FOR UPDATE;
+ IF estado_actual IS NULL THEN RAISE EXCEPTION 'Incapacidad no encontrada'; END IF;
+ IF estado_actual<>'Radicada' THEN RAISE EXCEPTION 'La incapacidad ya fue revisada por Enfermería'; END IF;
+ IF NOT p_aprobar AND NULLIF(TRIM(COALESCE(p_observacion,'')),'') IS NULL THEN RAISE EXCEPTION 'Debes indicar el motivo del rechazo'; END IF;
+ UPDATE public.incapacidades SET
+  estado=CASE WHEN p_aprobar THEN 'Pendiente coordinación' ELSE 'Rechazada por Enfermería' END,
+  revisada_enfermeria_por=uid,fecha_revision_enfermeria=NOW(),
+  observacion_enfermeria=NULLIF(TRIM(COALESCE(p_observacion,'')),'')
+ WHERE id_incapacidad=p_id_incapacidad;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.resolver_incapacidad_coordinacion(p_id_incapacidad bigint,p_aprobar boolean,p_observacion text DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE uid bigint; estado_actual text;
+BEGIN
+ uid:=public.mi_usuario_id();
+ IF uid IS NULL OR public.mi_rol()<>2 THEN RAISE EXCEPTION 'Solo Coordinación puede realizar la aprobación final'; END IF;
+ SELECT estado INTO estado_actual FROM public.incapacidades WHERE id_incapacidad=p_id_incapacidad FOR UPDATE;
+ IF estado_actual IS NULL THEN RAISE EXCEPTION 'Incapacidad no encontrada'; END IF;
+ IF estado_actual<>'Pendiente coordinación' THEN RAISE EXCEPTION 'La incapacidad debe estar aprobada previamente por Enfermería'; END IF;
+ IF NOT p_aprobar AND NULLIF(TRIM(COALESCE(p_observacion,'')),'') IS NULL THEN RAISE EXCEPTION 'Debes indicar el motivo del rechazo'; END IF;
+ UPDATE public.incapacidades SET
+  estado=CASE WHEN p_aprobar THEN 'Aprobada' ELSE 'Rechazada por Coordinación' END,
+  revisada_coordinacion_por=uid,fecha_revision_coordinacion=NOW(),
+  observacion_coordinacion=NULLIF(TRIM(COALESCE(p_observacion,'')),''),
+  aprobado_por=CASE WHEN p_aprobar THEN uid ELSE NULL END,
+  fecha_aprobacion=CASE WHEN p_aprobar THEN NOW() ELSE NULL END
+ WHERE id_incapacidad=p_id_incapacidad;
+END $$;
+
+REVOKE ALL ON FUNCTION public.listar_estudiantes_incapacidades() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.revisar_incapacidad_enfermeria(bigint,boolean,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.resolver_incapacidad_coordinacion(bigint,boolean,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.listar_estudiantes_incapacidades() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.revisar_incapacidad_enfermeria(bigint,boolean,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.resolver_incapacidad_coordinacion(bigint,boolean,text) TO authenticated;
