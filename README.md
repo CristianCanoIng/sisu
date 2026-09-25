@@ -46,7 +46,7 @@ El proyecto principal ya no depende de PHP para ejecutar la aplicación.
 - **Dashboard:** indicadores y actividad reciente.
 - **Usuarios:** administración de usuarios, roles y permisos.
 - **Enfermería:** registro y seguimiento de consultas.
-- **Incapacidades:** radicación, consulta y gestión de incapacidades.
+- **Incapacidades:** radicación con soporte por estudiante o profesor de apoyo, revisión de Enfermería, aprobación final de Coordinación y seguimiento de estado.
 - **Bienestar:** administración de actividades universitarias.
 - **Acompañamiento:** seguimiento de procesos de acompañamiento.
 - **Inventario y reportes:** módulos complementarios de gestión.
