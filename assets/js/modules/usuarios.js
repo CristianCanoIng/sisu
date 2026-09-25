@@ -2,7 +2,7 @@ import{requireProfile}from'../session.js';import{supabase}from'../supabase.js';i
 const p=await requireProfile('usuarios');renderNavbar(p,'usuarios');let rows=[];
 
 async function load(){
- const{data,error}=await supabase.from('usuarios').select('id_usuario,nombre,correo,documento,telefono,id_rol,estado,roles(nombre),pacientes(codigo_estudiantil,programa_academico,semestre)').order('id_usuario',{ascending:false});
+ const{data,error}=await supabase.from('usuarios').select('id_usuario,nombre,correo,documento,telefono,id_rol,estado,roles(nombre),pacientes(id_paciente,codigo_estudiantil,programa_academico,semestre)').order('id_usuario',{ascending:false});
  if(error)throw error;rows=data||[];render();
 }
 function patientOf(u){return Array.isArray(u.pacientes)?u.pacientes[0]:u.pacientes}
@@ -14,8 +14,8 @@ function modal(){
 
 function render(){
  $('#topActions').innerHTML='<button id="exportUsers" class="btn btn-success"><i class="fas fa-file-csv"></i> Exportar CSV</button><button id="newUser" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo usuario</button>';
- $('#app').innerHTML=`<div class="card"><div class="card-header"><h3>Listado de usuarios</h3><span>${rows.length} usuarios</span></div><div class="card-body">${rows.length?`<table class="data-table"><thead><tr><th>ID estudiante</th><th>Nombre</th><th>Correo</th><th>Documento</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${rows.map(u=>`<tr><td>${Number(u.id_rol)===3?'<strong>'+escapeHtml(studentCode(u)||'SIN-ID')+'</strong>':'—'}</td><td>${escapeHtml(u.nombre)}</td><td>${escapeHtml(String(u.correo||'').endsWith('@registro.sisu.local')?'Perfil operativo sin acceso':u.correo)}</td><td>${escapeHtml(u.documento||'')}</td><td>${escapeHtml(u.telefono||'')}</td><td>${escapeHtml(u.roles?.nombre||'')}</td><td><span class="badge badge-${u.estado}">${u.estado}</span></td><td><div class="actions">${u.id_usuario!==p.id_usuario?`<button class="btn ${u.estado==='Activo'?'btn-warning':'btn-success'} btn-sm toggle" data-id="${u.id_usuario}" data-state="${u.estado}">${u.estado==='Activo'?'Desactivar':'Activar'}</button>`:''}</div></td></tr>`).join('')}</tbody></table>`:'<div class="empty-state">No hay usuarios</div>'}</div></div>${modal()}`;
- wireModal('userModal');$('#exportUsers').onclick=exportUsers;$('#newUser').onclick=()=>openModal('userModal');$('#userForm').onsubmit=createUser;document.querySelectorAll('.toggle').forEach(b=>b.onclick=()=>toggle(b.dataset.id,b.dataset.state));
+ $('#app').innerHTML=`<div class="card"><div class="card-header"><h3>Listado de usuarios</h3><span>${rows.length} usuarios</span></div><div class="card-body">${rows.length?`<table class="data-table"><thead><tr><th>ID estudiante</th><th>Nombre</th><th>Correo</th><th>Documento</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${rows.map(u=>`<tr><td>${Number(u.id_rol)===3?'<strong>'+escapeHtml(studentCode(u)||'SIN-ID')+'</strong>':'—'}</td><td>${escapeHtml(u.nombre)}</td><td>${escapeHtml(String(u.correo||'').endsWith('@registro.sisu.local')?'Perfil operativo sin acceso':u.correo)}</td><td>${escapeHtml(u.documento||'')}</td><td>${escapeHtml(u.telefono||'')}</td><td>${escapeHtml(u.roles?.nombre||'')}</td><td><span class="badge badge-${u.estado}">${u.estado}</span></td><td><div class="actions">${Number(u.id_rol)===3?`<button class="btn btn-light btn-sm setCode" data-id="${patientOf(u)?.id_paciente||''}" data-code="${escapeHtml(studentCode(u))}">ID estudiante</button>`:''}${u.id_usuario!==p.id_usuario?`<button class="btn ${u.estado==='Activo'?'btn-warning':'btn-success'} btn-sm toggle" data-id="${u.id_usuario}" data-state="${u.estado}">${u.estado==='Activo'?'Desactivar':'Activar'}</button>`:''}</div></td></tr>`).join('')}</tbody></table>`:'<div class="empty-state">No hay usuarios</div>'}</div></div>${modal()}`;
+ wireModal('userModal');$('#exportUsers').onclick=exportUsers;$('#newUser').onclick=()=>openModal('userModal');$('#userForm').onsubmit=createUser;document.querySelectorAll('.toggle').forEach(b=>b.onclick=()=>toggle(b.dataset.id,b.dataset.state));document.querySelectorAll('.setCode').forEach(b=>b.onclick=()=>setStudentCode(b.dataset.id,b.dataset.code));
 }
 
 function exportUsers(){
@@ -35,6 +35,17 @@ async function createUser(e){
  if(error)return showAlert(error.message,'error');
  if(data?.error)return showAlert(data.error,'error');
  closeModal('userModal');showAlert(data?.perfil_existente?'Cuenta vinculada al estudiante existente.':'Usuario creado.');load();
+}
+
+async function setStudentCode(id,current){
+ if(!id)return showAlert('El estudiante no tiene perfil de paciente.','error');
+ const code=prompt('ID de estudiante (ej. 824426):',current||'');
+ if(code===null)return;
+ const value=code.trim();
+ if(!/^[0-9]{4,20}$/.test(value))return showAlert('El ID debe contener entre 4 y 20 dígitos.','error');
+ const{error}=await supabase.from('pacientes').update({codigo_estudiantil:value}).eq('id_paciente',Number(id));
+ if(error)return showAlert(error.message,'error');
+ showAlert('ID de estudiante actualizado.');load();
 }
 
 async function toggle(id,state){const{error}=await supabase.from('usuarios').update({estado:state==='Activo'?'Inactivo':'Activo'}).eq('id_usuario',Number(id));if(error)return showAlert(error.message,'error');load()}
