@@ -133,6 +133,18 @@ Los soportes de incapacidades se almacenan en el bucket privado `incapacidades` 
 
 ---
 
+### Gestión de estudiantes por ID institucional
+
+Para estudiantes, SISU utiliza `pacientes.codigo_estudiantil` como identificador principal visible (por ejemplo, `824426` o `844389`). Los módulos de consultas, acompañamiento, incapacidades e implementos deportivos permiten buscar por este ID y crear un perfil operativo de estudiante sin abandonar el formulario.
+
+En una instalación existente, ejecute también:
+
+```text
+supabase/gestion_estudiantes.sql
+```
+
+Los perfiles creados rápidamente pueden quedar sin acceso de inicio de sesión. Posteriormente un Administrador o Coordinador puede crear la cuenta completa usando el mismo ID de estudiante; para esta vinculación debe desplegarse la versión actual de la Edge Function `crear-usuario`.
+
 ## Ejecución local
 
 La versión actual no necesita WAMP ni PHP.
