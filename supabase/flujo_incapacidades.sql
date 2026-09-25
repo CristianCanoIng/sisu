@@ -17,11 +17,14 @@ SET radicada_por=p.id_usuario
 FROM public.pacientes p
 WHERE p.id_paciente=i.id_paciente AND i.radicada_por IS NULL;
 
+-- Ampliar primero la columna y retirar temporalmente la restricción anterior.
+-- Los nuevos estados superan los 20 caracteres y no pertenecen al CHECK antiguo.
+ALTER TABLE public.incapacidades ALTER COLUMN estado TYPE VARCHAR(40);
+ALTER TABLE public.incapacidades DROP CONSTRAINT IF EXISTS incapacidades_estado_check;
+
 UPDATE public.incapacidades SET estado='Radicada' WHERE estado='En revisión';
 UPDATE public.incapacidades SET estado='Rechazada por Coordinación' WHERE estado='Rechazada';
 
-ALTER TABLE public.incapacidades ALTER COLUMN estado TYPE VARCHAR(40);
-ALTER TABLE public.incapacidades DROP CONSTRAINT IF EXISTS incapacidades_estado_check;
 ALTER TABLE public.incapacidades ADD CONSTRAINT incapacidades_estado_check
 CHECK (estado IN ('Radicada','Pendiente coordinación','Aprobada','Rechazada por Enfermería','Rechazada por Coordinación'));
 
