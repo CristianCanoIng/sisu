@@ -16,6 +16,8 @@ DROP POLICY IF EXISTS consultas_delete ON public.consultas;
 DROP POLICY IF EXISTS incapacidades_read ON public.incapacidades;
 DROP POLICY IF EXISTS incapacidades_student_insert ON public.incapacidades;
 DROP POLICY IF EXISTS incapacidades_manage ON public.incapacidades;
+DROP POLICY IF EXISTS incapacidades_submit ON public.incapacidades;
+DROP POLICY IF EXISTS incapacidades_admin_update ON public.incapacidades;
 DROP POLICY IF EXISTS incapacidades_delete ON public.incapacidades;
 DROP POLICY IF EXISTS bienestar_read ON public.actividades_bienestar;
 DROP POLICY IF EXISTS bienestar_manage ON public.actividades_bienestar;
@@ -47,12 +49,20 @@ CREATE POLICY consultas_update ON public.consultas FOR UPDATE TO authenticated U
 CREATE POLICY consultas_delete ON public.consultas FOR DELETE TO authenticated USING(public.mi_rol()=1);
 
 CREATE POLICY incapacidades_read ON public.incapacidades FOR SELECT TO authenticated USING(
- public.mi_rol() IN (1,2,4,5) OR EXISTS(SELECT 1 FROM pacientes p WHERE p.id_paciente=incapacidades.id_paciente AND p.id_usuario=public.mi_usuario_id())
+ public.mi_rol() IN (1,2,4)
+ OR EXISTS(SELECT 1 FROM pacientes p WHERE p.id_paciente=incapacidades.id_paciente AND p.id_usuario=public.mi_usuario_id())
+ OR (public.mi_rol()=5 AND incapacidades.radicada_por=public.mi_usuario_id())
 );
-CREATE POLICY incapacidades_student_insert ON public.incapacidades FOR INSERT TO authenticated WITH CHECK(
- public.mi_rol()=3 AND EXISTS(SELECT 1 FROM pacientes p WHERE p.id_paciente=incapacidades.id_paciente AND p.id_usuario=public.mi_usuario_id())
+CREATE POLICY incapacidades_submit ON public.incapacidades FOR INSERT TO authenticated WITH CHECK(
+ radicada_por=public.mi_usuario_id()
+ AND (
+  (public.mi_rol()=3 AND EXISTS(SELECT 1 FROM pacientes p WHERE p.id_paciente=incapacidades.id_paciente AND p.id_usuario=public.mi_usuario_id()))
+  OR public.mi_rol()=5
+ )
+ AND estado='Radicada'
 );
-CREATE POLICY incapacidades_manage ON public.incapacidades FOR UPDATE TO authenticated USING(public.mi_rol() IN (1,2)) WITH CHECK(public.mi_rol() IN (1,2));
+CREATE POLICY incapacidades_admin_update ON public.incapacidades FOR UPDATE TO authenticated
+USING(public.mi_rol()=1) WITH CHECK(public.mi_rol()=1);
 CREATE POLICY incapacidades_delete ON public.incapacidades FOR DELETE TO authenticated USING(public.mi_rol()=1);
 
 CREATE POLICY bienestar_read ON public.actividades_bienestar FOR SELECT TO authenticated USING(public.mi_rol() IN (1,3,7));
@@ -70,7 +80,19 @@ CREATE POLICY seg_read ON public.seguimientos_acompanamiento FOR SELECT TO authe
 CREATE POLICY seg_insert ON public.seguimientos_acompanamiento FOR INSERT TO authenticated WITH CHECK(usuario_id=public.mi_usuario_id() AND EXISTS(SELECT 1 FROM acompanamientos a JOIN pacientes p ON p.id_paciente=a.id_paciente WHERE a.id_acompanamiento=seguimientos_acompanamiento.id_acompanamiento AND (public.mi_rol() IN (1,4) OR p.id_usuario=public.mi_usuario_id())));
 
 CREATE POLICY incap_storage_insert ON storage.objects FOR INSERT TO authenticated WITH CHECK(bucket_id='incapacidades' AND (storage.foldername(name))[1]=public.mi_usuario_id()::text);
-CREATE POLICY incap_storage_read ON storage.objects FOR SELECT TO authenticated USING(bucket_id='incapacidades' AND (public.mi_rol() IN (1,2,4,5) OR (storage.foldername(name))[1]=public.mi_usuario_id()::text));
+CREATE POLICY incap_storage_read ON storage.objects FOR SELECT TO authenticated USING(
+ bucket_id='incapacidades' AND (
+  public.mi_rol() IN (1,2,4)
+  OR (storage.foldername(name))[1]=public.mi_usuario_id()::text
+  OR EXISTS(
+   SELECT 1
+   FROM public.incapacidades i
+   JOIN public.pacientes p ON p.id_paciente=i.id_paciente
+   WHERE i.archivo_soporte=name
+     AND (p.id_usuario=public.mi_usuario_id() OR i.radicada_por=public.mi_usuario_id())
+  )
+ )
+);
 
 
 -- Seguridad del módulo de implementos deportivos
