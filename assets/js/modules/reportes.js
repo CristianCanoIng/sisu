@@ -22,11 +22,11 @@ async function bienestarReport(){
  $('#app').innerHTML='<div class="stats-grid">'+cards.map(x=>'<div class="stat-card"><div class="stat-value">'+x[1]+'</div><div class="stat-label">'+escapeHtml(x[0])+'</div></div>').join('')+'</div><div class="grid-3">'+tbl('Actividades por categoría',ac)+tbl('Disponibilidad deportiva',ic)+tbl('Préstamos por estado',pc)+'</div>';wireExport();
 }
 async function generalReport(){
- const k=await Promise.all([count('consultas'),count('consultas',q=>q.eq('estado','Atendida')),count('actividades_bienestar'),count('inscripciones_bienestar'),count('eventos_sst'),count('asistencia_sst'),count('incapacidades'),count('incapacidades',q=>q.eq('estado','Aprobada'))]);
- const [ct,ss,ie]=await Promise.all([group('consultas','tipo_consulta'),group('eventos_sst','estado'),group('incapacidades','estado')]);
- const cards=[['Consultas',k[0]],['Atendidas',k[1]],['Actividades',k[2]],['Participaciones',k[3]],['Eventos SST',k[4]],['Asistencias',k[5]],['Incapacidades',k[6]],['Aprobadas',k[7]]];
- exportRows=[...cards.map(x=>({seccion:'Indicador',categoria:x[0],total:x[1]})),...ct.map(x=>({seccion:'Consultas por tipo',categoria:x.etiqueta,total:x.total})),...ss.map(x=>({seccion:'SST por estado',categoria:x.etiqueta,total:x.total})),...ie.map(x=>({seccion:'Incapacidades por estado',categoria:x.etiqueta,total:x.total}))];
+ const k=await Promise.all([count('consultas'),count('consultas',q=>q.eq('estado','Atendida')),count('actividades_bienestar'),count('inscripciones_bienestar'),count('incapacidades'),count('incapacidades',q=>q.eq('estado','Aprobada'))]);
+ const [ct,ie]=await Promise.all([group('consultas','tipo_consulta'),group('incapacidades','estado')]);
+ const cards=[['Consultas',k[0]],['Atendidas',k[1]],['Actividades',k[2]],['Participaciones',k[3]],['Incapacidades',k[4]],['Aprobadas',k[5]]];
+ exportRows=[...cards.map(x=>({seccion:'Indicador',categoria:x[0],total:x[1]})),...ct.map(x=>({seccion:'Consultas por tipo',categoria:x.etiqueta,total:x.total})),...ie.map(x=>({seccion:'Incapacidades por estado',categoria:x.etiqueta,total:x.total}))];
  $('#topActions').innerHTML='<button id="exportReport" class="btn btn-success"><i class="fas fa-file-csv"></i> Exportar reporte CSV</button>';
- $('#app').innerHTML='<div class="stats-grid">'+cards.map(x=>'<div class="stat-card"><div class="stat-value">'+x[1]+'</div><div class="stat-label">'+escapeHtml(x[0])+'</div></div>').join('')+'</div><div class="grid-3">'+tbl('Consultas por tipo',ct)+tbl('SST por estado',ss)+tbl('Incapacidades por estado',ie)+'</div>';wireExport();
+ $('#app').innerHTML='<div class="stats-grid">'+cards.map(x=>'<div class="stat-card"><div class="stat-value">'+x[1]+'</div><div class="stat-label">'+escapeHtml(x[0])+'</div></div>').join('')+'</div><div class="grid-2">'+tbl('Consultas por tipo',ct)+tbl('Incapacidades por estado',ie)+'</div>';wireExport();
 }
 if(Number(p.id_rol)===7)bienestarReport();else generalReport();

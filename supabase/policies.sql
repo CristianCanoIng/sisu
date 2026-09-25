@@ -1,6 +1,6 @@
 -- RLS base para SISU. La UI oculta acciones, pero estas políticas son la seguridad real.
 DO $$ DECLARE t text; BEGIN
- FOREACH t IN ARRAY ARRAY['roles','usuarios','pacientes','consultas','incapacidades','actividades_bienestar','inscripciones_bienestar','eventos_sst','asistencia_sst','inventario','movimiento_inventario','acompanamientos','seguimientos_acompanamiento']
+ FOREACH t IN ARRAY ARRAY['roles','usuarios','pacientes','consultas','incapacidades','actividades_bienestar','inscripciones_bienestar','inventario','movimiento_inventario','acompanamientos','seguimientos_acompanamiento']
  LOOP EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t); END LOOP;
 END $$;
 
@@ -20,10 +20,6 @@ DROP POLICY IF EXISTS incapacidades_delete ON public.incapacidades;
 DROP POLICY IF EXISTS bienestar_read ON public.actividades_bienestar;
 DROP POLICY IF EXISTS bienestar_manage ON public.actividades_bienestar;
 DROP POLICY IF EXISTS inscripciones_read ON public.inscripciones_bienestar;
-DROP POLICY IF EXISTS sst_read ON public.eventos_sst;
-DROP POLICY IF EXISTS sst_manage ON public.eventos_sst;
-DROP POLICY IF EXISTS asistencia_read ON public.asistencia_sst;
-DROP POLICY IF EXISTS asistencia_insert ON public.asistencia_sst;
 DROP POLICY IF EXISTS inventario_read ON public.inventario;
 DROP POLICY IF EXISTS inventario_write ON public.inventario;
 DROP POLICY IF EXISTS movimientos_read ON public.movimiento_inventario;
@@ -62,11 +58,6 @@ CREATE POLICY incapacidades_delete ON public.incapacidades FOR DELETE TO authent
 CREATE POLICY bienestar_read ON public.actividades_bienestar FOR SELECT TO authenticated USING(public.mi_rol() IN (1,3,7));
 CREATE POLICY bienestar_manage ON public.actividades_bienestar FOR ALL TO authenticated USING(public.mi_rol() IN (1,7)) WITH CHECK(public.mi_rol() IN (1,7));
 CREATE POLICY inscripciones_read ON public.inscripciones_bienestar FOR SELECT TO authenticated USING(id_usuario=public.mi_usuario_id() OR public.mi_rol() IN (1,7));
-
-CREATE POLICY sst_read ON public.eventos_sst FOR SELECT TO authenticated USING(public.mi_rol() IN (1,3));
-CREATE POLICY sst_manage ON public.eventos_sst FOR ALL TO authenticated USING(public.mi_rol()=1) WITH CHECK(public.mi_rol()=1);
-CREATE POLICY asistencia_read ON public.asistencia_sst FOR SELECT TO authenticated USING(id_usuario=public.mi_usuario_id() OR public.mi_rol()=1);
-CREATE POLICY asistencia_insert ON public.asistencia_sst FOR INSERT TO authenticated WITH CHECK(id_usuario=public.mi_usuario_id() OR public.mi_rol()=1);
 
 CREATE POLICY inventario_read ON public.inventario FOR SELECT TO authenticated USING(public.mi_rol() IN (1,2,4));
 CREATE POLICY inventario_write ON public.inventario FOR ALL TO authenticated USING(public.mi_rol() IN (1,2,4)) WITH CHECK(public.mi_rol() IN (1,2,4));

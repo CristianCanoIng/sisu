@@ -10,7 +10,7 @@
   <p align="center">
     Sistema Integral de Salud Universitaria.
     <br />
-    Aplicación web para la gestión de salud, bienestar universitario, incapacidades, SST y acompañamiento.
+    Aplicación web para la gestión de salud, bienestar universitario, incapacidades y acompañamiento.
     <br />
     Arquitectura migrada a GitHub Pages + Supabase.
     <br /><br />
@@ -48,7 +48,6 @@ El proyecto principal ya no depende de PHP para ejecutar la aplicación.
 - **Enfermería:** registro y seguimiento de consultas.
 - **Incapacidades:** radicación, consulta y gestión de incapacidades.
 - **Bienestar:** administración de actividades universitarias.
-- **SST:** gestión de eventos de Seguridad y Salud en el Trabajo.
 - **Acompañamiento:** seguimiento de procesos de acompañamiento.
 - **Inventario y reportes:** módulos complementarios de gestión.
 
@@ -101,7 +100,6 @@ sisu/
 ├── enfermeria.html
 ├── incapacidades.html
 ├── bienestar.html
-├── sst.html
 ├── usuarios.html
 ├── inventario.html
 ├── reportes.html
