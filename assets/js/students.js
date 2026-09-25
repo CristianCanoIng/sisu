@@ -27,7 +27,7 @@ export function filterStudentSelect(select,students,term,valueField='id_paciente
 }
 
 export function quickStudentHtml(prefix){
- return '<div class="card" style="margin-top:12px"><div class="card-header"><h3>Crear estudiante sin salir del módulo</h3></div><div class="card-body"><div class="form-grid">'+
+ return '<div class="card full" style="margin-top:12px"><div class="card-header"><h3>Crear estudiante sin salir del módulo</h3></div><div class="card-body"><div class="form-grid">'+
  '<div class="form-group"><label>ID de estudiante *</label><input id="'+prefix+'Codigo" class="form-control" inputmode="numeric" placeholder="Ej. 824426"></div>'+
  '<div class="form-group"><label>Nombre completo *</label><input id="'+prefix+'Nombre" class="form-control"></div>'+
  '<div class="form-group"><label>Programa</label><input id="'+prefix+'Programa" class="form-control"></div>'+
