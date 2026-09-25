@@ -111,33 +111,24 @@ CREATE TABLE public.incapacidades (
     motivo TEXT,
     diagnostico TEXT,
     archivo_soporte VARCHAR(255),
-
-    estado VARCHAR(20) DEFAULT 'Radicada'
-        CHECK (
-            estado IN (
-                'Radicada',
-                'En revisión',
-                'Aprobada',
-                'Rechazada'
-            )
-        ),
-
+    estado VARCHAR(40) DEFAULT 'Radicada' CHECK (estado IN ('Radicada','Pendiente coordinación','Aprobada','Rechazada por Enfermería','Rechazada por Coordinación')),
     observaciones TEXT,
     fecha_radicacion TIMESTAMPTZ DEFAULT NOW(),
+    radicada_por BIGINT,
+    revisada_enfermeria_por BIGINT,
+    fecha_revision_enfermeria TIMESTAMPTZ,
+    observacion_enfermeria TEXT,
+    revisada_coordinacion_por BIGINT,
+    fecha_revision_coordinacion TIMESTAMPTZ,
+    observacion_coordinacion TEXT,
     fecha_aprobacion TIMESTAMPTZ,
     aprobado_por BIGINT,
-
-    FOREIGN KEY (id_paciente)
-        REFERENCES public.pacientes(id_paciente)
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (id_consulta)
-        REFERENCES public.consultas(id_consulta)
-        ON DELETE SET NULL,
-
-    FOREIGN KEY (aprobado_por)
-        REFERENCES public.usuarios(id_usuario)
-        ON DELETE SET NULL
+    FOREIGN KEY (id_paciente) REFERENCES public.pacientes(id_paciente) ON DELETE CASCADE,
+    FOREIGN KEY (id_consulta) REFERENCES public.consultas(id_consulta) ON DELETE SET NULL,
+    FOREIGN KEY (radicada_por) REFERENCES public.usuarios(id_usuario) ON DELETE SET NULL,
+    FOREIGN KEY (revisada_enfermeria_por) REFERENCES public.usuarios(id_usuario) ON DELETE SET NULL,
+    FOREIGN KEY (revisada_coordinacion_por) REFERENCES public.usuarios(id_usuario) ON DELETE SET NULL,
+    FOREIGN KEY (aprobado_por) REFERENCES public.usuarios(id_usuario) ON DELETE SET NULL
 );
 
 -- =========================
