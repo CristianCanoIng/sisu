@@ -54,6 +54,69 @@ El proyecto principal ya no depende de PHP para ejecutar la aplicación.
 
 ---
 
+## Identidad visual
+
+La identidad visual de **SISU — Sistema Integral de Salud Universitaria** se basa en una paleta institucional de azul y amarillo, aplicada de forma consistente en la navegación, botones, estados activos y elementos destacados del sistema.
+
+<p align="center">
+  <img src="assets/img/logosisu.png" alt="Logo SISU" width="180">
+</p>
+
+### Paleta de colores
+
+| Tipo | Color | Hexadecimal | Aplicación |
+|---|---|---|---|
+| **Primary Color** | Azul SISU | `#003DA5` | Navegación, botones principales, encabezados y acciones primarias |
+| **Dark Primary Color** | Azul oscuro | `#002470` | Variantes oscuras, degradados, estados hover y barra de estado |
+| **Accent Color** | Amarillo SISU | `#F5C400` | Elementos activos, indicadores, iconos y acciones destacadas |
+
+Esta combinación mantiene la coherencia gráfica de SISU y permite trasladar la misma identidad a interfaces basadas en **Material Design**.
+
+### Material Design en Android
+
+Los colores pueden definirse en `res/values/colors.xml`:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#003DA5</color>
+    <color name="colorPrimaryDark">#002470</color>
+    <color name="colorAccent">#F5C400</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="background">#F5F7FB</color>
+</resources>
+```
+
+Y posteriormente integrarse al tema de la aplicación en `res/values/themes.xml`:
+
+```xml
+<resources>
+    <style name="Theme.SISU"
+        parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorSecondary">@color/colorAccent</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+    </style>
+</resources>
+```
+
+El uso de **Material Components / AppCompat** permite conservar una apariencia consistente y brindar soporte a distintas versiones de Android.
+
+### Aplicación de la identidad en SISU
+
+- `#003DA5` se utiliza como color principal en navegación, botones y componentes de interacción.
+- `#002470` se emplea en variantes oscuras, degradados y estados de interacción.
+- `#F5C400` funciona como color de acento para elementos seleccionados y destacados.
+- Los fondos claros, como `#F5F7FB` y blanco, favorecen el contraste y la legibilidad.
+
+De esta manera, una versión móvil de SISU puede conservar la misma línea visual del sistema web y ofrecer una experiencia coherente entre plataformas.
+
+---
+
 ## Arquitectura
 
 ```text
